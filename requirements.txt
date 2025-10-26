@@ -1,0 +1,2 @@
+fastapi[all]==0.119.1
+fast-bitrix24==1.8.11
