@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-from bitrix.object_ks import add as object_ks_add_util
+from app.bitrix.object_ks import add as object_ks_add_util
+from app.schemas.object_ks import ObjectKSModel
 
 app = FastAPI()
 
 @app.post("/add_object_ks")
-def add_object_ks_endpoint():
+def add_object_ks_endpoint(object_ks: ObjectKSModel):
     return object_ks_add_util()
 
 @app.put("/update_object_ks")
