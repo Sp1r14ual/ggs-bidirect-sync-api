@@ -72,6 +72,7 @@ b = Bitrix(webhook)
 
 def build_payload(object_ks):
     object_ks_to_dict = dict(object_ks)
+    object_ks_to_dict.pop("id", "does not exist")
     payload = {}
 
     for key, value in object_ks_to_dict.items():
@@ -106,4 +107,13 @@ def add(object_ks):
     print(payload)
 
     res = b.call('crm.item.add', {"entityTypeId": 1066, "fields": payload})
+    return res
+
+def update(object_ks):
+    id = object_ks.id
+    payload = build_payload(object_ks)
+
+    print(payload)
+
+    res = b.call('crm.item.update', {"id": id, "entityTypeId": 1066, "fields": payload})
     return res

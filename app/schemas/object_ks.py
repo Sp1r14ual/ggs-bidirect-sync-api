@@ -63,4 +63,21 @@ class ObjectKSModel(BaseModel):
     pass_to_lawyer_date: Optional[date] = date.today()
     manager: Optional[ObjectKSEnums.Manager] = 118
 
+class AddObjectKSModel(ObjectKSModel):
+    pass
+
+class UpdateObjectKSModel(ObjectKSModel):
+    id: int = 15
+
+class GetObjectKSModell(BaseModel):
+    #to-do
+    pass
+
+class ListObjectKSModell(BaseModel):
+    #to-do
+    pass
+
+class DeleteObjectKSModell(BaseModel):
+    #to-do
+    pass
 
