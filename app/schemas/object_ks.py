@@ -69,15 +69,14 @@ class AddObjectKSModel(ObjectKSModel):
 class UpdateObjectKSModel(ObjectKSModel):
     id: int = 15
 
-class GetObjectKSModell(BaseModel):
+class GetObjectKSModel(BaseModel):
+    id: int = 8
+
+class ListObjectKSModel(BaseModel):
     #to-do
     pass
 
-class ListObjectKSModell(BaseModel):
-    #to-do
-    pass
-
-class DeleteObjectKSModell(BaseModel):
+class DeleteObjectKSModel(BaseModel):
     #to-do
     pass
 

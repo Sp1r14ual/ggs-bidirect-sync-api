@@ -117,3 +117,15 @@ def update(object_ks):
 
     res = b.call('crm.item.update', {"id": id, "entityTypeId": 1066, "fields": payload})
     return res
+
+def get(id):
+    res = b.call('crm.item.get', {"id": id, "entityTypeId": 1066})
+    return res
+
+def list():
+    res = b.call('crm.item.list', {"entityTypeId": 1066})
+    return res
+
+def delete(id):
+    res = b.call('crm.item.delete', {"id": id, "entityTypeId": 1066})
+    return res
