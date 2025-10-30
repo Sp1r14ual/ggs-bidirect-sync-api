@@ -67,7 +67,8 @@ class AddObjectKSModel(ObjectKSModel):
     pass
 
 class UpdateObjectKSModel(ObjectKSModel):
-    id: int = 15
+    # id: int = 15
+    pass
 
 class GetObjectKSModel(BaseModel):
     id: int = 8

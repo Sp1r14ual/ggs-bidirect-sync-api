@@ -12,13 +12,11 @@ app = FastAPI()
 @app.post("/add_object_ks")
 def add_object_ks_endpoint(object_ks: AddObjectKSModel):
     return object_ks_add_util(object_ks)
-    # print(dict(object_ks))
-    # return
 
-@app.put("/update_object_ks")
-def update_object_ks_endpoint(object_ks: UpdateObjectKSModel):
+@app.put("/update_object_ks/{id}")
+def update_object_ks_endpoint(id: int, object_ks: UpdateObjectKSModel):
     #Добавить обработку случая "элемент не найден"
-    return object_ks_update_util(object_ks)
+    return object_ks_update_util(id, object_ks)
 
 @app.get("/get_object_ks/{id}")
 def get_object_ks_endpoint(id: int):
