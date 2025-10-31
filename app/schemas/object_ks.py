@@ -55,7 +55,7 @@ class ObjectKSModel(BaseModel):
     application_from2: Optional[date] = date.today()
     passed_in_pto2: Optional[date] = date.today()
     received_technical_condition2: Optional[str] = "https://example.com" #Ссылки передавать текстом?
-    documents: Optional[str] #Как передавать байтовые массивы?
+    documents: Optional[list[str]]
     application_date: Optional[date] = date.today()
     agreed: Optional[date] = date.today()
     remark4: Optional[str] = "yeyeyeyeye"
