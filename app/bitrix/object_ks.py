@@ -27,24 +27,24 @@ def build_payload(object_ks):
 
 
 
-def add(object_ks):
+def add_item(object_ks):
     payload = build_payload(object_ks)
     res = b.call('crm.item.add', {"entityTypeId": 1066, "fields": payload})
     return res
 
-def update(id, object_ks):
+def update_item(id, object_ks):
     payload = build_payload(object_ks)
     res = b.call('crm.item.update', {"id": id, "entityTypeId": 1066, "fields": payload})
     return res
 
-def get(id):
+def get_item(id):
     res = b.call('crm.item.get', {"id": id, "entityTypeId": 1066})
     return res
 
-def list():
+def list_items():
     res = b.call('crm.item.list', {"entityTypeId": 1066})
     return res
 
-def delete(id):
+def delete_item(id):
     res = b.call('crm.item.delete', {"id": id, "entityTypeId": 1066})
     return res
