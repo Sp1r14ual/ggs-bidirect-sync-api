@@ -1,8 +1,8 @@
 from fast_bitrix24 import Bitrix
 from datetime import datetime, timedelta
-import app.enums.object_ks_enums as ObjectKSEnums
+import app.enums.object_ks as ObjectKSEnums
 
-webhook = "https://dev.ggs-nsk.ru/rest/118/xb10aqz3kexdtxlm/"
+webhook = "https://dev.ggs-nsk.ru/rest/132/sgcqlj6lfixazqh6/"
 b = Bitrix(webhook)
 
 def build_payload(object_ks):
@@ -15,8 +15,8 @@ def build_payload(object_ks):
         # Проверяем типы значений
         if isinstance(value, bool):
             append_value = "Y" if append_value else "N"
-        elif isinstance(value, (ObjectKSEnums.ClientType2, ObjectKSEnums.State2, ObjectKSEnums.GasificationType2, 
-        ObjectKSEnums.District, ObjectKSEnums.Event, ObjectKSEnums.Pad, ObjectKSEnums.Material, ObjectKSEnums.Manager)):
+        elif isinstance(value, (ObjectKSEnums.ClientType, ObjectKSEnums.State, ObjectKSEnums.GasificationType, 
+        ObjectKSEnums.District, ObjectKSEnums.Playground, ObjectKSEnums.Contract)):
             append_value = value.value
         else:
             append_value = value

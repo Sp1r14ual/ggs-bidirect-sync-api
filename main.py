@@ -1,7 +1,7 @@
 from fast_bitrix24 import Bitrix
+from pprint import pprint
 
-webhook = "https://10.0.80.130/rest/118/omaq6z2w849swei4"
-# webhook = 'https://b24-m3at2v.bitrix24.ru/rest/1/dg5ac7u1087jr8fu/'
+webhook = "https://dev.ggs-nsk.ru/rest/132/sgcqlj6lfixazqh6/"
 b = Bitrix(webhook)
 
 # def add_crm_company(params: dict = {"TITLE": "ИП Тестов", "COMPANY_TYPE": "CUSTOMER", "CURRENCY_ID": "RUB", "REVENUE": 3000000}):
@@ -10,5 +10,6 @@ b = Bitrix(webhook)
 
 # add_crm_company()
 
-res = b.call('crm.company.list', {"select": ["*"], "filter": {}})
-print(res)
+# res = b.call('crm.lead.list', {"select": ["*"], "filter": {"PHONE": "79133747598"}})
+res = b.call('crm.lead.get', {"id": 2995})
+pprint(res)
