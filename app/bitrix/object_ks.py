@@ -28,14 +28,20 @@ def build_payload(object_ks):
 
 
 def add_item(object_ks):
+    payload = build_payload(object_ks)
+    # payload = object_ks
+    res = b.call('crm.item.add', {"entityTypeId": 1066, "fields": payload})
+    return res
+
+def add_item_for_db_sync(object_ks):
     # payload = build_payload(object_ks)
     payload = object_ks
     res = b.call('crm.item.add', {"entityTypeId": 1066, "fields": payload})
     return res
 
 def update_item(id, object_ks):
-    # payload = build_payload(object_ks)
-    payload = object_ks
+    payload = build_payload(object_ks)
+    # payload = object_ks
     res = b.call('crm.item.update', {"id": id, "entityTypeId": 1066, "fields": payload})
     return res
 

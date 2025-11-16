@@ -54,6 +54,9 @@ class House(Base):
     gc_fact = Column(Numeric(8, 5))
     grs_diam = Column(Numeric(8, 5))
 
+    object_ks_crm_id = Column(Integer)
+    gasification_stage_crm_id = Column(Integer)
+
     #Внешние ключи
     id_district = Column(Integer, ForeignKey('district.id'))
     id_street = Column(Integer, ForeignKey('street.id'))

@@ -1,4 +1,6 @@
-from sqlalchemy import create_engine, select, join
+from sqlalchemy import create_engine, select, join, update
+from sqlalchemy.orm import Session
+
 from app.models.house import House
 from app.models.district import District
 from app.models.street import Street
@@ -10,8 +12,6 @@ from app.models.grs import Grs
 from app.models.type_packing import TypePacking
 from app.models.type_pipe_material import TypePipeMaterial
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 
 engine = create_engine(
     'mssql+pyodbc://DESKTOP-8F7T81O\\SQLEXPRESS/ggs_stud?driver=SQL+Server+Native+Client+11.0', echo=True)
@@ -108,3 +108,17 @@ def query_house_by_id(id: int):
         result_dict = clean_result(result)
 
         return result_dict
+
+def update_house_with_crm_ids(id: int, object_ks_crm_id: int, gasification_stage_crm_id: int):
+    with Session(autoflush=False, bind=engine) as session:
+        query = (
+            update(House)
+            .where(House.id == id)
+            .values(
+                object_ks_crm_id=object_ks_crm_id,
+                gasification_stage_crm_id=gasification_stage_crm_id
+            )
+        )
+
+        result = session.execute(query)
+        session.commit()

@@ -1,6 +1,8 @@
 from aenum import Enum
 
 class BaseEnum(Enum):
+    _init_ = 'value string'
+
     def __str__(self):
         return self.string
 
@@ -8,10 +10,10 @@ class BaseEnum(Enum):
     def _missing_value_(cls, value):
         for member in cls:
             if member.string == value:
-                return member.value
+                return member
 
 class Grs2(BaseEnum):
-    not_chosen = 0
+    not_chosen = 0, "Не определено"
     grs_2 = 931, "ГРС-2"
     grs_3 = 935, "ГРС-3"
     grs_4 = 936, "ГРС-4"
@@ -45,7 +47,7 @@ class Material(BaseEnum):
     polyethylene = 570, "Полиэтилен"
     metal = 569, "Металл"
 
-class GasificationStageFields(BaseEnum):
+class GasificationStageFields(Enum):
     agreed = "ufCrm30_1755258794624"
     remark1 = "ufCrm30_1752134986320"
     grs = "ufCrm30_1752135017"
