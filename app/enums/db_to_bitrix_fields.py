@@ -53,3 +53,14 @@ class HouseToGasificationStageFields(Enum):
     type_packing = "pad"
     type_pipe_material = "material"
     grs_diam = "diameter"
+
+class PersonToContactFields(Enum):
+    family_name = "LAST_NAME"
+    birthdate = "BIRTHDATE"
+    phone_number = "PHONE"
+    name = "NAME"
+    patronimic_name = "SECOND_NAME"
+    snils = "UF_CRM_1739334773204"
+
+class OrganizationToCompanyFields(Enum):
+    pass

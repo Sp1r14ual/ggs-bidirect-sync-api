@@ -2,14 +2,16 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse
 from app.bitrix.object_ks import add_item_for_db_sync as object_ks_add_util
 from app.bitrix.gasification_stage import add_item_for_db_sync as gasification_stage_add_util
+from app.bitrix.contact import add_item_for_db_sync as contact_add_util
 from app.db.query_object_ks_gs import query_house_by_id, update_house_with_crm_ids
-from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasificationStageFields
+from app.db.query_contact import query_person_by_id
+from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasificationStageFields, PersonToContactFields
 from app.enums.object_ks import ObjectKSFields, ClientType, GasificationType, District
 from app.enums.gasification_stage import GasificationStageFields, Event, Grs2, Pad, Material
 
 router = APIRouter(prefix="/sync_with_db", tags=["db"])
 
-def build_payloads(house):
+def build_payloads_object_ks_gs(house):
     object_ks_payload = dict()
     gasification_stage_payload = dict()
 
@@ -86,9 +88,9 @@ def sync_with_db_house_endpoint(id: int):
     house = query_house_by_id(id)
 
     if not house:
-        raise HTTPException(status_code=400, detail="Item not found") 
+        raise HTTPException(status_code=400, detail="House not found") 
 
-    object_ks_payload, gasification_stage_payload = build_payloads(house)
+    object_ks_payload, gasification_stage_payload = build_payloads_object_ks_gs(house)
 
     object_ks_crm_id = object_ks_add_util(object_ks_payload)["id"]
 
@@ -104,6 +106,33 @@ def sync_with_db_house_endpoint(id: int):
         "gasification_stage_crm_id": gasification_stage_crm_id
     }
 
-    # return {**object_ks_payload, **gasification_stage_payload}
-    # return object_ks_payload
-    # return object_ks_add_util(object_ks_payload)
+
+def build_payload_contact(person):
+    contact_payload = {}
+
+    for key, value in person.items():
+        if key not in PersonToContactFields.__members__:
+            continue
+
+        bitrix_field_name = PersonToContactFields[key].value
+        contact_payload[bitrix_field_name] = value
+    
+    return contact_payload
+
+
+@router.get("/person/{id}")
+def sync_with_db_person_endpoint(id: int):
+    person = query_person_by_id(id)
+
+    if not person:
+        raise HTTPException(status_code=400, detail="Person not found") 
+
+    contact_payload = build_payload_contact(person)
+
+    bitrix_item = contact_add_util(contact_payload)
+
+    return bitrix_item
+
+@router.get("/organization/{id}")
+def sync_with_db_organization_endpoint(id: int):
+    pass
