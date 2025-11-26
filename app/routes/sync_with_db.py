@@ -10,7 +10,7 @@ from app.bitrix.address import add_item_for_db_sync as address_add_util
 from app.db.query_object_ks_gs import query_house_by_id, update_house_with_crm_ids
 from app.db.query_contact import query_person_by_id, update_person_with_crm_ids
 from app.db.query_company import query_organization_by_id, update_organization_with_crm_ids
-from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasificationStageFields, PersonToContactFields, PersonToContactRequisite, PersonToAddress, OrganizationToCompanyFields, OrganizationToCompanyRequisite, OrganizationToCompanyBankdetailRequisite
+from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasificationStageFields, PersonToContactFields, PersonToContactRequisite, PersonToAddress, OrganizationToCompanyFields, OrganizationToAddress, OrganizationToCompanyRequisite, OrganizationToCompanyBankdetailRequisite
 from app.enums.object_ks import ObjectKSFields, ClientType, GasificationType, District
 from app.enums.gasification_stage import GasificationStageFields, Event, Grs2, Pad, Material
 
@@ -211,6 +211,35 @@ def build_payload_company(organization):
     
     return company_payload, preset_id
 
+def build_payload_company_address(organization, requisite_id):
+    jur_address_payload = {
+        "TYPE_ID": 6, # Юридический адрес
+        "ENTITY_TYPE_ID": 8, # Реквизиты
+        "ENTITY_ID": requisite_id
+    }
+
+    fact_address_payload = {
+        "TYPE_ID": 1, # Фактический адрес
+        "ENTITY_TYPE_ID": 8, # Реквизиты
+        "ENTITY_ID": requisite_id
+    }
+
+    for key, value in organization.items():
+        if key not in OrganizationToAddress.__members__:
+            continue
+
+        if key in ("adress_jur", "zip_code_jur"):
+            bitrix_field_name = OrganizationToAddress[key].value
+            jur_address_payload[bitrix_field_name] = value
+            continue
+        
+        if key in ("adress_fact", "zip_code_fact"):
+            bitrix_field_name = OrganizationToAddress[key].value
+            fact_address_payload[bitrix_field_name] = value
+            continue
+    
+    return jur_address_payload, fact_address_payload
+
 def build_payload_company_requisite(organization, company_id, preset_id):
     requisite_payload = {"ENTITY_TYPE_ID": 4, 
                         "ENTITY_ID": company_id, 
@@ -253,6 +282,10 @@ def sync_with_db_organization_endpoint(id: int):
 
     company_bankdetail_requisite_payload = build_payload_company_bankdetail_requisite(organization, requisite_company_id)
     bankdetail_requisite_company_id = requisite_bankdetail_add_util(company_bankdetail_requisite_payload)
+
+    address_jur_payload, address_fact_payload = build_payload_company_address(organization, requisite_company_id)
+    address_jur_company_id = address_add_util(address_jur_payload)
+    address_fact_company_id = address_add_util(address_fact_payload)
 
     update_organization_with_crm_ids(id, bitrix_company_id, requisite_company_id, bankdetail_requisite_company_id)
 

@@ -92,6 +92,12 @@ class OrganizationToCompanyFields(Enum):
     is_smr_gvd_gnd = "UfCrm1756803661"
     is_to_gvd_gnd = "UfCrm1756803741"
 
+class OrganizationToAddress(Enum):
+    adress_jur = "ADDRESS_1"
+    zip_code_jur = "POSTAL_CODE"
+    adress_fact = "ADDRESS_1"
+    zip_code_fact = "POSTAL_CODE"
+
 class OrganizationToCompanyRequisite(Enum):
     inn = "RQ_INN"
     kpp = "RQ_KPP"
