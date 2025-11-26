@@ -8,7 +8,7 @@ from app.bitrix.requisite import add_item_for_db_sync as requisite_add_util
 from app.bitrix.requisite_bankdetail import add_item_for_db_sync as requisite_bankdetail_add_util
 from app.bitrix.address import add_item_for_db_sync as address_add_util
 from app.db.query_object_ks_gs import query_house_by_id, update_house_with_crm_ids
-from app.db.query_contact import query_person_by_id
+from app.db.query_contact import query_person_by_id, update_person_with_crm_ids
 from app.db.query_company import query_organization_by_id, update_organization_with_crm_ids
 from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasificationStageFields, PersonToContactFields, PersonToContactRequisite, PersonToAddress, OrganizationToCompanyFields, OrganizationToCompanyRequisite, OrganizationToCompanyBankdetailRequisite
 from app.enums.object_ks import ObjectKSFields, ClientType, GasificationType, District
@@ -185,10 +185,13 @@ def sync_with_db_person_endpoint(id: int):
     contact_address_payload = build_payload_contact_address(person, requisite_contact_id)
     address_contact_id = address_add_util(contact_address_payload)
 
+    update_person_with_crm_ids(id, bitrix_contact_id, requisite_contact_id)
+
     return {
+        "person_id": id,
         "company_id": bitrix_contact_id,
         "requisite_id": requisite_contact_id,
-        "address_id": address_contact_id
+        # "address_id": address_contact_id
     }
 
 def build_payload_company(organization):
@@ -254,6 +257,7 @@ def sync_with_db_organization_endpoint(id: int):
     update_organization_with_crm_ids(id, bitrix_company_id, requisite_company_id, bankdetail_requisite_company_id)
 
     return {
+        "organization_id": id,
         "company_id": bitrix_company_id,
         "requisite_id": requisite_company_id,
         "bankdetail_requisite_id": bankdetail_requisite_company_id

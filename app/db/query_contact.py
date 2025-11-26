@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, update
 from sqlalchemy.orm import Session
 from app.models.person import Person
 
@@ -17,3 +17,16 @@ def query_person_by_id(id: int):
         result_mapping = dict(result._mapping)
         return result_mapping
         
+def update_person_with_crm_ids(id: int, contact_crm_id: int, requisite_crm_id: int):
+    with Session(autoflush=False, bind=engine) as session:
+        query = (
+            update(Person)
+            .where(Person.id == id)
+            .values(
+                contact_crm_id=contact_crm_id,
+                requisite_crm_id=requisite_crm_id,
+            )
+        )
+
+        result = session.execute(query)
+        session.commit()
