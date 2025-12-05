@@ -37,3 +37,5 @@ class Organization(Base):
     company_crm_id = Column(Integer, nullable=True)
     requisite_crm_id = Column(Integer, nullable=True)
     bankdetail_requisite_crm_id = Column(Integer, nullable=True)
+    has_crm_jur_address = Column(Integer, nullable=True)
+    has_crm_fact_address = Column(Integer, nullable=True)

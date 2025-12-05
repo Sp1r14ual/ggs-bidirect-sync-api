@@ -33,3 +33,4 @@ class Person(Base):
     email = Column(String(32), nullable=True)
     contact_crm_id = Column(Integer, nullable=True)
     requisite_crm_id = Column(Integer, nullable=True)
+    has_crm_address = Column(Integer, nullable=True)

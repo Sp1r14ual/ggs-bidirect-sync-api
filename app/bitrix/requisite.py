@@ -7,3 +7,8 @@ def add_item_for_db_sync(requisite):
     payload = requisite
     res = b.call('crm.requisite.add', {"fields": payload})
     return res
+
+def update_item_for_db_sync(id, requisite):
+    payload = requisite
+    res = b.call('crm.requisite.update', {"id": id, "fields": payload})
+    return res

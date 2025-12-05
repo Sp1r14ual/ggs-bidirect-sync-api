@@ -8,3 +8,8 @@ def add_item_for_db_sync(company):
     payload = company
     res = b.call('crm.company.add', {"fields": payload})
     return res
+
+def update_item_for_db_sync(id, company):
+    payload = company
+    res = b.call('crm.company.update', {"id": id, "fields": payload})
+    return res

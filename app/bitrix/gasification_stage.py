@@ -43,6 +43,12 @@ def update_item(id, gasification_stage):
     res = b.call('crm.item.update', {"id": id, "entityTypeId": 1146, "fields": payload})
     return res
 
+def update_item_for_db_sync(id, gasification_stage):
+    # payload = build_payload(gasification_stage)
+    payload = gasification_stage
+    res = b.call('crm.item.update', {"id": id, "entityTypeId": 1146, "fields": payload})
+    return res
+
 def get_item(id):
     res = b.call('crm.item.get', {"id": id, "entityTypeId": 1146})
     return res

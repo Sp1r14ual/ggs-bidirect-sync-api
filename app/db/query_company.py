@@ -17,7 +17,7 @@ def query_organization_by_id(id: int):
         result_mapping = dict(result._mapping)
         return result_mapping
 
-def update_organization_with_crm_ids(id: int, company_crm_id: int, requisite_crm_id: int, bankdetail_requisite_crm_id: int):
+def update_organization_with_crm_ids(id: int, company_crm_id: int, requisite_crm_id: int, bankdetail_requisite_crm_id: int, has_address_jur_company: bool, has_address_fact_company: bool):
     with Session(autoflush=False, bind=engine) as session:
         query = (
             update(Organization)
@@ -25,7 +25,9 @@ def update_organization_with_crm_ids(id: int, company_crm_id: int, requisite_crm
             .values(
                 company_crm_id=company_crm_id,
                 requisite_crm_id=requisite_crm_id,
-                bankdetail_requisite_crm_id=bankdetail_requisite_crm_id
+                bankdetail_requisite_crm_id=bankdetail_requisite_crm_id,
+                has_crm_jur_address=int(has_address_jur_company),
+                has_crm_fact_address=int(has_address_fact_company)
             )
         )
 

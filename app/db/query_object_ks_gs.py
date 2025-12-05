@@ -89,7 +89,9 @@ def query_house_by_id(id: int):
                 House.gc_fact,
                 TypePacking.name.label('type_packing'),
                 TypePipeMaterial.name.label('type_pipe_material'),
-                House.grs_diam
+                House.grs_diam,
+                House.object_ks_crm_id,
+                House.gasification_stage_crm_id
             )
             .select_from(House)
             .join(District, House.id_district == District.id, isouter=True)

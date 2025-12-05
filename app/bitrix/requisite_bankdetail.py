@@ -7,3 +7,8 @@ def add_item_for_db_sync(bankdetail_requisite):
     payload = bankdetail_requisite
     res = b.call('crm.requisite.bankdetail.add', {"fields": payload})
     return res
+
+def update_item_for_db_sync(id, bankdetail_requisite):
+    payload = bankdetail_requisite
+    res = b.call('crm.requisite.bankdetail.update', {"id": id, "fields": payload})
+    return res

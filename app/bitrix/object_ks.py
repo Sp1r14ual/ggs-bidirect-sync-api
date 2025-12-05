@@ -45,6 +45,12 @@ def update_item(id, object_ks):
     res = b.call('crm.item.update', {"id": id, "entityTypeId": 1066, "fields": payload})
     return res
 
+def update_item_for_db_sync(id, object_ks):
+    # payload = build_payload(object_ks)
+    payload = object_ks
+    res = b.call('crm.item.update', {"id": id, "entityTypeId": 1066, "fields": payload})
+    return res
+
 def get_item(id):
     res = b.call('crm.item.get', {"id": id, "entityTypeId": 1066})
     return res
