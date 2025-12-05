@@ -14,7 +14,7 @@ from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasifica
 from app.enums.object_ks import ObjectKSFields, ClientType, GasificationType, District
 from app.enums.gasification_stage import GasificationStageFields, Event, Grs2, Pad, Material
 
-router = APIRouter(prefix="/sync_with_db", tags=["db"])
+router = APIRouter(prefix="/bidirect_sync", tags=["bidirect_sync"])
 
 def build_payloads_object_ks_gs(house):
     object_ks_payload = dict()

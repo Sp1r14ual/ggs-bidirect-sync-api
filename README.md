@@ -1,1 +1,53 @@
-# ggs-integration-api
+# GGS Integration API
+
+API для двухсторонней интеграции с Битрикс24 и базой данных (ОСА)
+
+---
+
+## 📦 Инструкция по запуску
+
+### 1. Клонирование репозитория
+
+```bash
+git clone https://github.com/Sp1r14ual/ggs-integration-api.git
+cd ggs-integration-api
+```
+
+### 2. Настройка окружения и зависимостей
+
+```
+python -m venv .venv
+
+# Активация (Windows)
+.venv\Scripts\activate
+
+# Активация (Linux/macOS)
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+### 3. Настройка переменных окружения
+
+Скопируйте пример файла конфигурации и заполните его:
+```
+cp .env.example .env
+```
+Содержимое .env:
+```env
+BITRIX_WEBHOOK="https://dev.ggs-nsk.ru/rest/132/%SECRET%/"
+DB_ENGINE_STRING='mssql+pyodbc://%COMPUTER_NAME%\\SQLEXPRESS/ggs_stud?driver=SQL+Server+Native+Client+11.0'
+```
+
+### 4. Запуск сервера
+```bash
+fastapi dev app/app.py
+```
+
+Сервер запустится на порту 8000
+
+### 5. Документация API
+
+Документация в формате OpenAPI доступна по адресу:
+
+🔗 http://127.0.0.1:8000/docs
