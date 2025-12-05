@@ -13,11 +13,13 @@ class BaseEnum(Enum):
                 return member
 
 class ClientType(BaseEnum):
+    not_chosen = 0, None
     connection_launch_only = 480, "Подключение (только пуск)"
     gasification = 481, "Газификация"
     resigning_to_vdgo = 482, "Перезаключение ТО ВДГО"
 
 class State(BaseEnum):
+    not_chosen = 0, None
     considered_delayed = 483, "предполагаемый отсроченный"
     asocial = 484, "асоциальный"
     gasificated = 485, "газифицирован"
@@ -31,6 +33,7 @@ class State(BaseEnum):
     undefined = 493, "не_определен"
 
 class GasificationType(BaseEnum):
+    not_chosen = 0, None
     asocial = 494, "Асоциальный"
     standard = 495, "Стандартный"
     social = 496, "Социальный"
@@ -40,6 +43,7 @@ class GasificationType(BaseEnum):
     additional_gasification_soc = 930, "Догазификация СОЦ"
 
 class District(BaseEnum):
+    not_chosen = 0, None
     dzerjinskiy = 400, "Дзержинский"
     jeleznodorojniy = 401, "Железнодорожный"
     zaeltsovskiy = 402, "Заельцовский"
@@ -53,6 +57,7 @@ class District(BaseEnum):
     centralniy = 410, "Центральный"
 
 class Playground(BaseEnum):
+    not_chosen = 0, None
     test = 1, "Тестовая"
     avleda_m = 2, "Авледа-М"
     biatlon = 3, "БИАТЛОН"

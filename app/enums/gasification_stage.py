@@ -13,7 +13,7 @@ class BaseEnum(Enum):
                 return member
 
 class Grs2(BaseEnum):
-    not_chosen = 0, "Не определено"
+    not_chosen = 0, None
     grs_2 = 931, "ГРС-2"
     grs_3 = 935, "ГРС-3"
     grs_4 = 936, "ГРС-4"
@@ -28,6 +28,7 @@ class Grs2(BaseEnum):
     
 
 class Event(BaseEnum):
+    not_chosen = 0, None
     reconstruction_existent_grs = 562, "Реконструкция существующей ГРС"
     insertion_on_applicat_territory = 557, "Врезка на участке заявителя (нулевая врезка)"
     reconstruction_gas_distribution_station = 558, "Реконструкция газораспределительной станции (ГРС)"
@@ -39,11 +40,13 @@ class Event(BaseEnum):
     installation_gas_reduction_node = 565, "Установка пункта редуцирования газа"
 
 class Pad(BaseEnum):
+    not_chosen = 0, None
     underground = 567, "Подземный"
     undefined = 566, "Не определен"
     aboveground = 568, "Надземный"
 
 class Material(BaseEnum):
+    not_chosen = 0, None
     polyethylene = 570, "Полиэтилен"
     metal = 569, "Металл"
 

@@ -17,7 +17,7 @@ def query_person_by_id(id: int):
         result_mapping = dict(result._mapping)
         return result_mapping
         
-def update_person_with_crm_ids(id: int, contact_crm_id: int, requisite_crm_id: int):
+def update_person_with_crm_ids(id: int, contact_crm_id: int, requisite_crm_id: int, has_crm_address: bool):
     with Session(autoflush=False, bind=engine) as session:
         query = (
             update(Person)
@@ -25,6 +25,7 @@ def update_person_with_crm_ids(id: int, contact_crm_id: int, requisite_crm_id: i
             .values(
                 contact_crm_id=contact_crm_id,
                 requisite_crm_id=requisite_crm_id,
+                has_crm_address = 1 if has_crm_address else 0
             )
         )
 
