@@ -59,6 +59,9 @@ def build_payload_equip(equip, house_equip):
             equip_payload[bitrix_field_name] = BoilSetupType(value).value
             continue
 
+        if key == "amount":
+            print(f"amount: {value}")
+
         bitrix_field_name = HouseEquipToEquip[key].value
         equip_payload[bitrix_field_name] = value   
 

@@ -124,5 +124,6 @@ class HouseEquipToEquip(Enum):
     boil_setup_name = "ufCrm47_1753075764"
     year_produce = "ufCrm47_1753075747"
     power = "ufCrm47_1753075726"
+    amount = "ufCrm47_1753075654"
 
 

@@ -17,6 +17,7 @@ def query_house_equip_by_id(id: int):
                 TypeBoilSetup.name.label('boil_setup_name'),      # Тип установки
                 HouseEquip.year_produce,
                 HouseEquip.power,
+                HouseEquip.amount,
                 HouseEquip.equip_crm_id
             )
             .outerjoin(TypeHouseEquip, HouseEquip.id_type_house_equip == TypeHouseEquip.id)
