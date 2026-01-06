@@ -18,6 +18,7 @@ def query_house_equip_by_id(id: int):
                 HouseEquip.year_produce,
                 HouseEquip.power,
                 HouseEquip.amount,
+                HouseEquip.du,
                 HouseEquip.equip_crm_id
             )
             .outerjoin(TypeHouseEquip, HouseEquip.id_type_house_equip == TypeHouseEquip.id)

@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from typing import Optional
 from app.db.query_equip import query_equip_by_id, update_equip_with_crm_ids
 from app.db.query_house_equip import query_house_equip_by_id, update_house_equip_with_crm_ids
-from app.enums.equip import EquipType, PackingType, MarkType, DiameterType, PipeMaterialType, BoilSetupType
+from app.enums.equip import EquipType, PackingType, MarkType, DuType, DiameterType, PipeMaterialType, BoilSetupType
 from app.enums.db_to_bitrix_fields import EquipToEquip, HouseEquipToEquip
 from app.bitrix.equip import add_item_for_db_sync as equip_add_util, update_item_for_db_sync as equip_update_util
 
@@ -21,10 +21,10 @@ def build_payload_equip(equip, house_equip):
             equip_payload[bitrix_field_name] = PackingType(value).value
             continue
         
-        elif key == "diameter_type_name":
-            bitrix_field_name = EquipToEquip[key].value
-            equip_payload[bitrix_field_name] = DiameterType(value).value
-            continue
+        # elif key == "diameter_type_name":
+        #     bitrix_field_name = EquipToEquip[key].value
+        #     equip_payload[bitrix_field_name] = DiameterType(value).value
+        #     continue
 
         elif key == "pipe_material_name":
             bitrix_field_name = EquipToEquip[key].value
@@ -36,7 +36,7 @@ def build_payload_equip(equip, house_equip):
             equip_payload[bitrix_field_name] = value
 
     for key, value in house_equip.items():
-        if key not in HouseEquipToEquip.__members__:
+        if key not in HouseEquipToEquip.__members__ and key not in ('du'):
             continue
 
         elif key == "equip_name":
@@ -59,8 +59,15 @@ def build_payload_equip(equip, house_equip):
             equip_payload[bitrix_field_name] = BoilSetupType(value).value
             continue
 
-        if key == "amount":
-            print(f"amount: {value}")
+        elif key == "du":
+            bitrix_field_name = HouseEquipToEquip[key + "1"].value
+            equip_payload[bitrix_field_name] = DiameterType(value).value
+
+            bitrix_field_name = HouseEquipToEquip[key + "2"].value
+            equip_payload[bitrix_field_name] = DuType(value).value
+
+            continue
+
 
         bitrix_field_name = HouseEquipToEquip[key].value
         equip_payload[bitrix_field_name] = value   

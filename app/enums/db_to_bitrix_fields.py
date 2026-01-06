@@ -111,7 +111,7 @@ class OrganizationToCompanyBankdetailRequisite(Enum):
 
 class EquipToEquip(Enum):
     packing_name = "ufCrm47_1753076112"
-    diameter = "ufCrm47_1755666805151"
+    # diameter = "ufCrm47_1755666805151"
     diameter_type_name = "ufCrm47_1753076284"
     length = "ufCrm47_1753076263"
     pipe_material_name = "ufCrm47_1753076229"
@@ -125,5 +125,7 @@ class HouseEquipToEquip(Enum):
     year_produce = "ufCrm47_1753075747"
     power = "ufCrm47_1753075726"
     amount = "ufCrm47_1753075654"
+    du1 = "ufCrm47_1755666805151"
+    du2 = "ufCrm47_1753076284"
 
 

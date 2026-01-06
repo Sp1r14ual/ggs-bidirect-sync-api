@@ -98,18 +98,25 @@ class MarkType(BaseEnum):
     Wiesberg = 1978, 'Wiesberg'
     Wolf = 1979, 'Wolf'
 
+class DuType(BaseEnum):
+    zero = 0, None
+    fifteen = 1980, 15
+    twenty = 1981, 20
+    twenty_five = 1982, 25
+    thirty_two = 1983, 32
+    forty = 1984, 40
+    fifty = 1985, 50
+    sixty_five = 1986, 65
+    eighty = 1987, 80
+    one_hundred = 1988, 100
+    one_hundred_ten = 1989, 110
+
 class DiameterType(BaseEnum):
     zero = 0, None
-    fifteen = 1980, 'Ду-15'
-    twenty = 1981, 'Ду-20'
-    twenty_five = 1982, 'Ду-25'
-    thirty_two = 1983, 'Ду-32'
-    forty = 1984, 'Ду-40'
-    fifty = 1985, 'Ду-50'
-    sixty_five = 1986, 'Ду-65'
-    eighty = 1987, 'Ду-80'
-    one_hundred = 1988, 'Ду-100'
-    one_hundred_ten = 1989, 'Ду-110'
+    fifteen = 897, 15
+    # Добавить остальные диаметры, если появятся
+
+
 
 class PipeMaterialType(BaseEnum):
     not_chosen = 0, None
