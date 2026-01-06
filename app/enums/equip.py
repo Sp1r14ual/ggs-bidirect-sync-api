@@ -116,6 +116,18 @@ class DiameterType(BaseEnum):
     fifteen = 897, 15
     # Добавить остальные диаметры, если появятся
 
+class StoveType(BaseEnum):
+    zero = 0, None
+    pg_one = 694, 1
+    pg_two = 695, 2
+    pg_three = 696, 3
+    pg_four = 697, 4
+    pg_five = 698, 5
+    pg_six = 699, 6
+    pg_seven = 700, 7
+    pg_eight = 701, 8
+    pg_nine = 702, 9
+    pg_ten = 703, 10
 
 
 class PipeMaterialType(BaseEnum):

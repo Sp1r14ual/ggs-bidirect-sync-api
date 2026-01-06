@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from typing import Optional
 from app.db.query_equip import query_equip_by_id, update_equip_with_crm_ids
 from app.db.query_house_equip import query_house_equip_by_id, update_house_equip_with_crm_ids
-from app.enums.equip import EquipType, PackingType, MarkType, DuType, DiameterType, PipeMaterialType, BoilSetupType
+from app.enums.equip import EquipType, PackingType, MarkType, DuType, DiameterType, StoveType, PipeMaterialType, BoilSetupType
 from app.enums.db_to_bitrix_fields import EquipToEquip, HouseEquipToEquip
 from app.bitrix.equip import add_item_for_db_sync as equip_add_util, update_item_for_db_sync as equip_update_util
 
@@ -66,6 +66,11 @@ def build_payload_equip(equip, house_equip):
             bitrix_field_name = HouseEquipToEquip[key + "2"].value
             equip_payload[bitrix_field_name] = DuType(value).value
 
+            continue
+
+        elif key == "pg":
+            bitrix_field_name = HouseEquipToEquip[key].value
+            equip_payload[bitrix_field_name] = StoveType(value).value
             continue
 
 
