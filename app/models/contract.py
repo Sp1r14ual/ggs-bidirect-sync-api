@@ -27,3 +27,4 @@ class Contract(Base):
     cancel_date = Column(DateTime)
     id_type_contract_status = Column(Integer)
     project_date = Column(Date)
+    contract_crm_id = Column(Integer)

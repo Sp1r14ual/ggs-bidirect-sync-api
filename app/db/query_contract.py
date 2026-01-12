@@ -23,6 +23,7 @@ def query_contract_by_id(id: int):
             Contract.number,
             TypeContract.name.label('type_contract_name'),
             TypeContract.prefix.label('type_contract_prefix'),
+            TypeContract.crm_category,
             TypeProduct.name.label('type_product_name'),
             Organization1.name.label('organization1_name'),
             Organization2.name.label('organization2_name'),
@@ -39,7 +40,8 @@ def query_contract_by_id(id: int):
             Contract.act_signed,
             Contract.cancel_remark,
             Contract.cancel_date,
-            Contract.project_date
+            Contract.project_date,
+            Contract.contract_crm_id
         ).select_from(Contract
         ).outerjoin(
             TypeContract, Contract.id_type_contract == TypeContract.id
@@ -70,14 +72,14 @@ def query_contract_by_id(id: int):
 
         return result_mapping
 
-# def update_equip_with_crm_ids(id: int, equip_crm_id: int):
-#     with Session(autoflush=False, bind=engine) as session:
-#         query = (
-#             update(Equip)
-#             .where(Equip.id == id)
-#             .values(equip_crm_id=equip_crm_id)
-#         )
+def update_contract_with_crm_id(id: int, contract_crm_id: int):
+    with Session(autoflush=False, bind=engine) as session:
+        query = (
+            update(Contract)
+            .where(Contract.id == id)
+            .values(contract_crm_id=contract_crm_id)
+        )
 
-#         result = session.execute(query)
-#         session.commit()
+        result = session.execute(query)
+        session.commit()
     
