@@ -157,19 +157,32 @@ def build_payload_contract(contract):
         #     bitrix_field_name = ContractToContract[key].value
         #     contract_payload[bitrix_field_name] = ContractKind(value).value
         #     continue
+          
+        if key in ("id_person1", "id_organization1"):
+            if value is None:
+                continue
+            if key == "id_person1":
+                bitrix_field_name = ContractToContract[key].value
+                contract_payload[bitrix_field_name] = "C_" + str(value)   
+                continue
+            else:
+                bitrix_field_name = ContractToContract[key].value
+                contract_payload[bitrix_field_name] = "CO_" + str(value)
+                continue
 
-        # Настроить нормальный маппинг контактов и компаний
-        #   
-        # if key in ("person1_name", "organization1") and value:
-        #     bitrix_field_name = ContractToContract[key].value
-        #     contract_payload[bitrix_field_name] = value   
-        #     continue
 
-        # if key in ("person2_name", "organization2") and value:
-        #     bitrix_field_name = ContractToContract[key].value
-        #     contract_payload[bitrix_field_name] = value   
-        #     continue
 
+        if key in ("id_person2", "id_organization2"):
+            if value is None:
+                continue
+            if key == "id_person2":
+                bitrix_field_name = ContractToContract[key].value
+                contract_payload[bitrix_field_name] = "C_" + str(value)   
+                continue
+            else:
+                bitrix_field_name = ContractToContract[key].value
+                contract_payload[bitrix_field_name] = "CO_" + str(value)
+                continue
 
         bitrix_field_name = ContractToContract[key].value
         contract_payload[bitrix_field_name] = value   
@@ -188,6 +201,8 @@ def sync_with_db_contracts_endpoint(contract_id: int):
 
     # Собираем payload договора для отправки в битрикс
     contract_payload = build_payload_contract(contract)
+
+    # return contract_payload
 
     #Вытаскиваем crm_id
     contract_crm_id = contract["contract_crm_id"]
