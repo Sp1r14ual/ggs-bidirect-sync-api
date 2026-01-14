@@ -118,7 +118,7 @@ def build_payload_contract(contract):
     contract_payload = dict()
 
     for key, value in contract.items():
-        if key not in ContractToContract.__members__:
+        if key not in ContractToContract.__members__ and key != 'date':
             continue
 
         elif key == "type_contract_name":
@@ -170,8 +170,6 @@ def build_payload_contract(contract):
                 contract_payload[bitrix_field_name] = "CO_" + str(value)
                 continue
 
-
-
         if key in ("id_person2", "id_organization2"):
             if value is None:
                 continue
@@ -183,6 +181,13 @@ def build_payload_contract(contract):
                 bitrix_field_name = ContractToContract[key].value
                 contract_payload[bitrix_field_name] = "CO_" + str(value)
                 continue
+
+        if key == "date":
+            bitrix_field_name = ContractToContract[key + "1"].value
+            contract_payload[bitrix_field_name] = value
+            bitrix_field_name = ContractToContract[key + "2"].value
+            contract_payload[bitrix_field_name] = value
+            continue
 
         bitrix_field_name = ContractToContract[key].value
         contract_payload[bitrix_field_name] = value   
@@ -197,12 +202,13 @@ def sync_with_db_contracts_endpoint(contract_id: int):
     if not contract:
         raise HTTPException(status_code=400, detail="Contract not found")
 
-    # return contract
-
     # Собираем payload договора для отправки в битрикс
     contract_payload = build_payload_contract(contract)
 
-    # return contract_payload
+    # return {
+    #     "contract_db": contract,
+    #     "contract_payload_bitrix": contract_payload
+    # }
 
     #Вытаскиваем crm_id
     contract_crm_id = contract["contract_crm_id"]
