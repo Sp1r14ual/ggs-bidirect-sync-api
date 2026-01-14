@@ -24,7 +24,7 @@ def query_contract_by_id(id: int):
             TypeContract.name.label('type_contract_name'),
             TypeContract.prefix.label('type_contract_prefix'),
             TypeContract.crm_category,
-            TypeProduct.name.label('type_product_name'),
+            # TypeProduct.name.label('type_product_name'),
             # Organization1.name.label('organization1_name'),
             # Organization1.id,
             # Organization2.name.label('organization2_name'),
