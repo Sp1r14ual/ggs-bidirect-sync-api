@@ -183,7 +183,7 @@ def build_payload_contact_address(person, requisite_id):
             continue
 
         if key in ("reg_street", "reg_house", "reg_house"):
-            ADDRESS_2 += value + ", "
+            ADDRESS_2 += str(value) + ", "
             continue
 
         bitrix_field_name = PersonToAddress[key].value
