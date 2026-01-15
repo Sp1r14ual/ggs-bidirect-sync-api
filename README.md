@@ -119,7 +119,7 @@ VALUES
 alter table net add crm_id_district int references zm.district(id)
 ```
 
-### 5. Документация API
+### 6. Документация API
 
 Документация в формате OpenAPI доступна по адресу:
 
