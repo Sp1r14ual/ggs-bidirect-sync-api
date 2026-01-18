@@ -42,11 +42,11 @@ def test_get_list(id_list: int):
     b = Bitrix(settings.BITRIX_WEBHOOK)
     return b.get_all('lists.element.get',
                   {'IBLOCK_TYPE_ID': 'lists',
-                         'IBLOCK_ID': id_list,
-                         'NAV_PARAMS': {
+                          'IBLOCK_ID': id_list,
+                          'NAV_PARAMS': {
                             'nPageSize': 100,  # Элементов на странице
                             'iNumPage': 1     # Номер страницы
-                        }
+                         }
                    })
 
 @app.get("/get_field/{entity_code}/{id_field}")
@@ -58,4 +58,19 @@ def test_get_field_info(entity_code:str, id_field: int):
                             'entityId': entity_code,
                             'id': id_field
                             })
-    return [{'id': x.get('id'), 'value': x.get('value')} for x in field_data['enum']]
+    #return field_data
+    return [{'field_id': field_data.get('id'),
+             'entityId': field_data.get('entityId'),
+             'fieldName': field_data.get('fieldName'),
+             'elem_id': x.get('id'),
+             'elem_value': x.get('value')} for x in field_data['enum']]
+
+
+@app.get("/get_all_fields")
+def test_get_all_fields():
+    b = Bitrix(settings.BITRIX_WEBHOOK)
+    field_data = b.get_all(
+                 'userfieldconfig.list',
+                   { "moduleId": "crm"}
+    )
+    return [{'field_id': x['id'], 'entityId': x['entityId'], 'fieldName':  x['fieldName']} for x in field_data if x['userTypeId'] == 'enumeration']
