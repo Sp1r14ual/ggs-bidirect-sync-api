@@ -22,8 +22,8 @@ def root():
     return HTMLResponse(content=content, status_code=200)
 
 # Тестовый эндпоинт для получения констант enumoв из битрикса
-@app.get("/{id_obj}")
-def test_get(id_obj: int):
+@app.get("/{id_entity}/{id_obj}")
+def test_get(id_entity: int, id_obj: int):
     b = Bitrix(settings.BITRIX_WEBHOOK)
-    # return b.call('crm.item.get', {"id": id_obj, "entityTypeId": 1078})
-    return b.call('crm.contact.get', {'id': id_obj})
+    return b.call('crm.item.get', {"id": id_obj, "entityTypeId": id_entity})
+    #return b.call('crm.contact.get', {'id': id_obj})

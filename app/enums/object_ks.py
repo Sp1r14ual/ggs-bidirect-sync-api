@@ -18,6 +18,7 @@ class ClientType(BaseEnum):
     gasification = 481, "Газификация"
     resigning_to_vdgo = 482, "Перезаключение ТО ВДГО"
 
+
 class State(BaseEnum):
     not_chosen = 0, None
     considered_delayed = 483, "предполагаемый отсроченный"
@@ -32,6 +33,7 @@ class State(BaseEnum):
     stub = 492, "заглушка"
     undefined = 493, "не_определен"
 
+
 class GasificationType(BaseEnum):
     not_chosen = 0, None
     asocial = 494, "Асоциальный"
@@ -41,6 +43,7 @@ class GasificationType(BaseEnum):
     additional_gasification = 498, "Догазификация"
     additional_gasification_snt = 929, "Догазификация СНТ"
     additional_gasification_soc = 930, "Догазификация СОЦ"
+
 
 class District(BaseEnum):
     not_chosen = 0, None
@@ -56,6 +59,7 @@ class District(BaseEnum):
     sovetskiy = 409, "Советский"
     centralniy = 410, "Центральный"
 
+
 class Playground(BaseEnum):
     not_chosen = 0, None
     test = 1, "Тестовая"
@@ -65,9 +69,11 @@ class Playground(BaseEnum):
     zolotaya_gorka_2003 = 5, "ЗОЛОТАЯ ГОРКА 2003"
     sibirskiye_prostori = 6, "СИБИРСКИЕ ПРОСТОРЫ"
 
+
 # Надо делать?
 class Contract(BaseEnum):
     pass
+
 
 class ObjectKSFields(Enum):
     project_to_vgdo_oao_sibirgasservice = "ufCrm10_1739508360"
@@ -86,3 +92,5 @@ class ObjectKSFields(Enum):
     playground = "ufCrm10_1756278171"
     id_house_osa = "ufCrm10_1756282250286"
     contracts = "ufCrm10_1758892098"
+    contact_id = "contact_id"
+    company_id = "company_id"

@@ -15,6 +15,7 @@ from app.models.type_spdg_action import TypeSPDGAction
 
 from app.db.engine import engine
 
+
 def clean_result(result):
     result_dict = dict(result)
 
@@ -36,7 +37,6 @@ def clean_result(result):
     # result_dict.pop("flat_number", "default")
 
     return result_dict
-
 
 
 def query_house_by_id(id: int):
@@ -62,7 +62,6 @@ def query_house_by_id(id: int):
                 House.is_ods,
                 House.cadastr_number,
                 House.cadastr_number_oks,
-                Organization.name.label('organization'),
                 # Этапы газификации
                 House.date_project_agreement,
                 House.project_agreement_remark,
@@ -97,7 +96,6 @@ def query_house_by_id(id: int):
             .join(Town, House.id_town == Town.id, isouter=True)
             .join(TypeClient, House.id_type_client == TypeClient.id, isouter=True)
             .join(TypeHouseGazification, House.id_type_house_gazification == TypeHouseGazification.id, isouter=True)
-            .join(Organization, House.id_organization == Organization.id, isouter=True)
             .join(Grs, House.id_grs == Grs.id, isouter=True)
             .join(TypePacking, House.id_type_packing == TypePacking.id, isouter=True)
             .join(TypePipeMaterial, House.id_type_pipe_material == TypePipeMaterial.id, isouter=True)
@@ -114,6 +112,8 @@ def query_house_by_id(id: int):
         result_mapping = result._mapping
 
         result_dict = clean_result(result_mapping)
+
+
 
         return result_dict
 

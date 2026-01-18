@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse
 from app.bitrix.object_ks import add_item_for_db_sync as object_ks_add_util, update_item_for_db_sync as object_ks_update_util
@@ -10,6 +12,7 @@ from app.bitrix.address import add_item_for_db_sync as address_add_util, update_
 from app.db.query_object_ks_gs import query_house_by_id, update_house_with_crm_ids
 from app.db.query_contact import query_person_by_id, update_person_with_crm_ids
 from app.db.query_company import query_organization_by_id, update_organization_with_crm_ids
+from app.db.query_house_owner import query_house_owner_by_house
 from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasificationStageFields, PersonToContactFields, PersonToContactRequisite, PersonToAddress, OrganizationToCompanyFields, OrganizationToAddress, OrganizationToCompanyRequisite, OrganizationToCompanyBankdetailRequisite
 from app.enums.object_ks import ObjectKSFields, ClientType, GasificationType, District
 from app.enums.gasification_stage import GasificationStageFields, Event, Grs2, Pad, Material
@@ -21,6 +24,7 @@ def build_payloads_object_ks_gs(house):
     gasification_stage_payload = dict()
 
     for key, value in house.items():
+        print(f"{key}:{value}")
 
         # pydantic_schema_field_name = HouseToObjectKSFields[key].value
         # bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
@@ -56,7 +60,7 @@ def build_payloads_object_ks_gs(house):
             bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
             object_ks_payload[bitrix_field_name] = District(value).value
 
-        elif key in ("cadastr_number", "cadastr_number_oks", "address", "organization"): # Что делать с organization?
+        elif key in ("cadastr_number", "cadastr_number_oks", "address", "contact_id", "company_id"):
             pydantic_schema_field_name = HouseToObjectKSFields[key].value
             bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
             object_ks_payload[bitrix_field_name] = value
@@ -85,9 +89,8 @@ def build_payloads_object_ks_gs(house):
             pydantic_schema_field_name = HouseToGasificationStageFields[key].value
             bitrix_field_name = GasificationStageFields[pydantic_schema_field_name].value
             gasification_stage_payload[bitrix_field_name] = value
-
-    
     return object_ks_payload, gasification_stage_payload
+
 
 @router.get("/house/{id}")
 def sync_with_db_house_endpoint(id: int) -> dict:
@@ -95,7 +98,18 @@ def sync_with_db_house_endpoint(id: int) -> dict:
 
     # Получаем house из БД
     house = query_house_by_id(id) 
+    house_owner = query_house_owner_by_house(id)
+    #если пустой contact_crm_id но не  пустой id_person, то синхроним его и перезапрашиваем
+    if house_owner["id_person"] and not house_owner["contact_crm_id"]:
+        sync_with_db_person_endpoint(house_owner["id_person"], id)
+        house_owner = query_house_owner_by_house(id)
+    # если пустой company_crm_id но не  пустой id_organization, то синхроним его
+    elif house_owner["id_organization"] and not house_owner["company_crm_id"]:
 
+        house_owner = query_house_owner_by_house(id)
+    house["contact_id"] = house_owner["contact_crm_id"]
+    house["company_id"] = house_owner["company_crm_id"]
+    print(house)
     # Возвращаем ошибку, если house пустой
     if not house:
         raise HTTPException(status_code=400, detail="House not found")
