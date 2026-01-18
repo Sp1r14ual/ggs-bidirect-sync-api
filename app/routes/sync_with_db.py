@@ -193,8 +193,8 @@ def build_payload_contact_address(person, requisite_id):
     
     return address_payload
 
-@router.get("/person/{id}")
-def sync_with_db_person_endpoint(id: int) -> dict:
+@router.get("/person/{id}/objectks/{object_ks_id}")
+def sync_with_db_person_endpoint(id: int, object_ks_id: int) -> dict:
     '''Эндпоинт для синхронизации битрикс-контактов с таблицей person'''
 
     # Достаем person из БД по id
@@ -210,6 +210,8 @@ def sync_with_db_person_endpoint(id: int) -> dict:
 
     #Собираем payload для создания/обновления битрикс-контакта
     contact_payload = build_payload_contact(person)
+
+    contact_payload["PARENT_ID_1066"] = object_ks_id
 
     # Если контакт уже существует в битрикс, то запускаем процедуру обновления
     if bitrix_contact_id:
@@ -320,8 +322,8 @@ def build_payload_company_bankdetail_requisite(organization, requisite_id):
     
     return bankdetail_requisite_payload
 
-@router.get("/organization/{id}")
-def sync_with_db_organization_endpoint(id: int):
+@router.get("/organization/{id}/objectks/{object_ks_id}")
+def sync_with_db_organization_endpoint(id: int, object_ks_id: int):
 
     # Достаём организацию из БД по id
     organization: dict = query_organization_by_id(id)
@@ -338,6 +340,8 @@ def sync_with_db_organization_endpoint(id: int):
 
     # Собираем payload компании для отправки в битрикс
     company_payload, preset_id = build_payload_company(organization)
+
+    company_payload["PARENT_ID_1066"] = object_ks_id
 
     # Если компания в битриксе уже существует, то обновляем
     if bitrix_company_id:

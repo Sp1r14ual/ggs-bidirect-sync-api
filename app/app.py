@@ -25,4 +25,5 @@ def root():
 @app.get("/{id_obj}")
 def test_get(id_obj: int):
     b = Bitrix(settings.BITRIX_WEBHOOK)
-    return b.call('crm.item.get', {"id": id_obj, "entityTypeId": 1078})
+    # return b.call('crm.item.get', {"id": id_obj, "entityTypeId": 1078})
+    return b.call('crm.contact.get', {'id': id_obj})
