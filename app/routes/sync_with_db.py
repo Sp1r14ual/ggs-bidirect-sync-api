@@ -256,7 +256,7 @@ def sync_with_db_person_endpoint(id: int, object_ks_id: int) -> dict:
     #Собираем payload для создания/обновления битрикс-контакта
     contact_payload = build_payload_contact(person)
 
-    contact_payload["PARENT_ID_1066"] = object_ks_id
+    contact_payload["parentId1066"] = object_ks_id
 
     # Если контакт уже существует в битрикс, то запускаем процедуру обновления
     if bitrix_contact_id:
@@ -386,7 +386,7 @@ def sync_with_db_organization_endpoint(id: int, object_ks_id: int):
     # Собираем payload компании для отправки в битрикс
     company_payload, preset_id = build_payload_company(organization)
 
-    company_payload["PARENT_ID_1066"] = object_ks_id
+    company_payload["parentId1066"] = object_ks_id
 
     # Если компания в битриксе уже существует, то обновляем
     if bitrix_company_id:
