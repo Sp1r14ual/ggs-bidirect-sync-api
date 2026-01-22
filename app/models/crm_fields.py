@@ -11,6 +11,7 @@ class CrmFields(Base):
     field_id = Column(Integer)
     entity_id = Column(String(100))
     field_name = Column(String(100))
+    field_name_unified = Column(String(100))
     elem_id = Column(Integer)
     elem_value = Column(String(100))
     is_prod = Column(Integer)

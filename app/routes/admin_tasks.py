@@ -64,6 +64,29 @@ def get_all_enum_fields():
 
     return [{'field_id': x['id'], 'entityId': x['entityId'], 'fieldName':  x['fieldName']} for x in field_data if x['userTypeId'] == 'enumeration']
 
+def unify_field_name(s: str) -> str:
+    if not s:
+        return s
+    
+    parts = s.split('_')
+    
+    if len(parts) < 3:
+        return s.lower()
+    
+    # Обрабатываем первую часть (префикс)
+    result = parts[0].lower()
+    
+    # Обрабатываем средние части (те, что до последней части)
+    for part in parts[1:-1]:
+        if part:  # Проверяем, что часть не пустая
+            # Делаем первую букву заглавной, остальные - строчными
+            result += part[0].upper() + part[1:].lower()
+    
+    # Добавляем последнюю часть с разделителем '_'
+    result += '_' + parts[-1]
+    
+    return result
+
 @router.get("/sync_crm_fields_with_db")
 def sync_crm_fields_with_db():
     rows: list = []
@@ -76,13 +99,13 @@ def sync_crm_fields_with_db():
         field_id: int = field.get("field_id")
         entity_id: str = field.get("entityId")
         field_name: str = field.get("fieldName")
-
         field_info: list = get_field_info(entity_id=entity_id, field_id=field_id)
         for info in field_info:
             crm_field = CrmFields(
                 field_id=info.get("field_id"),
                 entity_id=info.get("entityId"),
                 field_name=info.get("fieldName"),
+                field_name_unified = unify_field_name(info.get("fieldName")),
                 elem_id=info.get("elem_id"),
                 elem_value=info.get("elem_value")
             )
