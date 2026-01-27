@@ -6,8 +6,10 @@ from app.models.contract import Contract
 from app.models.type_contract import TypeContract
 from app.models.type_contract_status import TypeContractStatus
 from app.models.type_product import TypeProduct
+from app.models.type_contract_person_category import TypeContractPersonCategory
 from app.models.organization import Organization
 from app.models.person import Person
+from app.models.house import House
 
 
 def query_contract_by_id(id: int):
@@ -17,6 +19,8 @@ def query_contract_by_id(id: int):
         Organization2 = aliased(Organization, name='o2')
         Person1 = aliased(Person, name='p1')
         Person2 = aliased(Person, name='p2')
+        # Organization = aliased(Organization, name='o')
+        # Person = aliased(Person, name='p')
 
         query = select(
             Contract.id,
@@ -24,20 +28,18 @@ def query_contract_by_id(id: int):
             TypeContract.name.label('type_contract_name'),
             TypeContract.prefix.label('type_contract_prefix'),
             TypeContract.crm_category,
-            # TypeProduct.name.label('type_product_name'),
-            # Organization1.name.label('organization1_name'),
-            # Organization1.id,
-            # Organization2.name.label('organization2_name'),
-            # Organization2.id,
-            # Person1.name.label('person1_name'),
-            # Person1.id,
-            # Person2.name.label('person2_name'),
-            # Person2.id,
             Organization1.company_crm_id.label('id_organization1'),
             Organization2.company_crm_id.label('id_organization2'),
             Person1.contact_crm_id.label('id_person1'),
             Person2.contact_crm_id.label('id_person2'),
+            Contract.id_house,
+            House.object_ks_crm_id,
+            TypeContract.id_person,
+            TypeContract.id_organization,
+            Person.contact_crm_id,
+            Organization.company_crm_id,
             TypeContractStatus.name.label('type_contract_status_name'),
+            TypeContractPersonCategory.name.label('type_contract_person_category_name'),
             ContractCategory.name.label('contract_category_name'),
             Contract.date,
             Contract.start,
@@ -63,6 +65,14 @@ def query_contract_by_id(id: int):
             Person1, Contract.id_person1 == Person1.id
         ).outerjoin(
             Person2, Contract.id_person2 == Person2.id
+        ).outerjoin(
+            Organization, TypeContract.id_organization == Organization.id
+        ).outerjoin(
+            Person, TypeContract.id_person == Person.id
+        ).outerjoin(
+            TypeContractPersonCategory, TypeContract.id_type_contract_person_category == TypeContractPersonCategory.id
+        ).outerjoin(
+            House, Contract.id_house == House.id
         ).outerjoin(
             TypeContractStatus, Contract.id_type_contract_status == TypeContractStatus.id
         ).outerjoin(
