@@ -118,7 +118,7 @@ def build_payloads_object_ks_gs(house):
     return object_ks_payload, gasification_stage_payload
 
 
-@router.get("/house/{id}/contract_id/{contract_crm_id}")
+@router.post("/house/{id}/contract_id/{contract_crm_id}")
 def sync_with_db_house_endpoint(id: int, contract_crm_id: Optional[int] = None) -> dict:
     '''Эндпоинт для синхронизации битрикс-сущностей Объект КС и Этапы газификации с таблицей house'''
 
@@ -242,7 +242,7 @@ def build_payload_contact_address(person, requisite_id):
     
     return address_payload
 
-@router.get("/person/{id}/objectks/{object_ks_id}")
+@router.post("/person/{id}/objectks/{object_ks_id}")
 def sync_with_db_person_endpoint(id: int, object_ks_id: Optional[int]) -> dict:
     '''Эндпоинт для синхронизации битрикс-контактов с таблицей person'''
 
@@ -372,7 +372,7 @@ def build_payload_company_bankdetail_requisite(organization, requisite_id):
     
     return bankdetail_requisite_payload
 
-@router.get("/organization/{id}/objectks/{object_ks_id}")
+@router.post("/organization/{id}/objectks/{object_ks_id}")
 def sync_with_db_organization_endpoint(id: int, object_ks_id: Optional[int]):
 
     # Достаём организацию из БД по id

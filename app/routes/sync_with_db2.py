@@ -115,7 +115,7 @@ def build_payload_equip(equip, house_equip):
     
     return equip_payload
 
-@router.get("/equip/{equip_id}/house_equip/{house_equip_id}")
+@router.post("/equip/{equip_id}/house_equip/{house_equip_id}")
 def sync_with_db_equip_endpoint(equip_id: int, house_equip_id: int):
     # Достаём оборудование из БД по id
     equip: dict = query_equip_by_id(equip_id)
@@ -251,7 +251,7 @@ def build_payload_contract(contract):
     
     return contract_payload
 
-@router.get("/contract/{contract_id}")
+@router.post("/contract/{contract_id}")
 def sync_with_db_contracts_endpoint(contract_id: int):
     # Достаём оборудование из БД по id
     contract: dict = query_contract_by_id(contract_id)
@@ -331,7 +331,7 @@ def build_payload_ground(ground: dict):
     
     return ground_payload
 
-@router.get("/ground/{ground_id}")
+@router.post("/ground/{ground_id}")
 def sync_with_db_ground_endpoint(ground_id: int):
 
     # Достаём площадку из БД по id
