@@ -12,6 +12,7 @@ class BaseEnum(Enum):
             if member.string == value:
                 return member
 
+
 class HouseToObjectKSFields(Enum):
     is_to_from_sibgs = "project_to_vgdo_oao_sibirgasservice"
     is_double_adress = "double_address"
@@ -24,8 +25,10 @@ class HouseToObjectKSFields(Enum):
     is_ods = "ods"
     cadastr_number = "land_kadastr_number"
     cadastr_number_oks = "oks_kadastr_number"
-    organization = "owners" # Как интегрировать владельцев?
+    contact_id = "contact_id"
+    company_id = "company_id"
     id = "id_house_osa"
+
 
 class HouseToGasificationStageFields(Enum):
     # Этапы газификации
@@ -54,6 +57,7 @@ class HouseToGasificationStageFields(Enum):
     type_pipe_material = "material"
     grs_diam = "diameter"
 
+
 class PersonToContactFields(Enum):
     family_name = "LAST_NAME"
     birthdate = "BIRTHDATE"
@@ -61,6 +65,7 @@ class PersonToContactFields(Enum):
     name = "NAME"
     patronimic_name = "SECOND_NAME"
     snils = "UF_CRM_1739334773204"
+
 
 class PersonToContactRequisite(Enum):
     family_name = "RQ_LAST_NAME"
@@ -76,6 +81,7 @@ class PersonToContactRequisite(Enum):
     ogrn = "RQ_OGRN"
     email = "RQ_EMAIL"
 
+
 class PersonToAddress(Enum):
     reg_adress = "ADDRESS_1"
     reg_region = "PROVINCE"
@@ -86,17 +92,20 @@ class PersonToAddress(Enum):
     reg_flat = ""
     postal_index = "POSTAL_CODE"
 
+
 class OrganizationToCompanyFields(Enum):
     name = "TITLE"
     is_pir = "UfCrm1756803695"
     is_smr_gvd_gnd = "UfCrm1756803661"
     is_to_gvd_gnd = "UfCrm1756803741"
 
+
 class OrganizationToAddress(Enum):
     adress_jur = "ADDRESS_1"
     zip_code_jur = "POSTAL_CODE"
     adress_fact = "ADDRESS_1"
     zip_code_fact = "POSTAL_CODE"
+
 
 class OrganizationToCompanyRequisite(Enum):
     inn = "RQ_INN"
@@ -150,3 +159,15 @@ class ContractToContract(Enum):
     subject = "ufCrm13_1751261952"
     contract_category_name = "ufCrm13_1751261436"
     crm_category = "ufCrm13_1751261513"
+
+class NetToGround(Enum):
+    sys_old = "ufCrm12_1739509219"
+    name = "ufCrm12_1739509226"
+    gro_name = "ufCrm12_1739509237"
+    town_name = "ufCrm12_1739513375"
+    status_name = "ufCrm12_1739514984"
+    houses_cnt = "ufCrm12_1739514995"
+    consumer_type_name = "ufCrm12_1739515028"
+    district_name  = "ufCrm12_1743425507"
+    remark = "ufCrm12_1761120404503"
+

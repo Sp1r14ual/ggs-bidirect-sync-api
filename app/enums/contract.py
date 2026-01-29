@@ -15,6 +15,9 @@ class BaseEnum(Enum):
 class ContractType(BaseEnum):
     not_chosen = 0, None
     tod = 892, "Договор ТОД"
+    to = 893, "Договор ТО"
+    tv = 894, "Договор ТВ"
+    rn = 895, "Договор РН"
 
 class ContractTypePrefix(BaseEnum):
     not_chosen = 0, None

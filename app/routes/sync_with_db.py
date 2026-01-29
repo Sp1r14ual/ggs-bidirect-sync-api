@@ -1,3 +1,6 @@
+import logging
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse
 from app.bitrix.object_ks import add_item_for_db_sync as object_ks_add_util, update_item_for_db_sync as object_ks_update_util
@@ -10,6 +13,8 @@ from app.bitrix.address import add_item_for_db_sync as address_add_util, update_
 from app.db.query_object_ks_gs import query_house_by_id, update_house_with_crm_ids
 from app.db.query_contact import query_person_by_id, update_person_with_crm_ids
 from app.db.query_company import query_organization_by_id, update_organization_with_crm_ids
+from app.db.query_house_owner import query_house_owner_by_house
+from app.db.query_crm_fields import query_crm_field_by_elem_value
 from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasificationStageFields, PersonToContactFields, PersonToContactRequisite, PersonToAddress, OrganizationToCompanyFields, OrganizationToAddress, OrganizationToCompanyRequisite, OrganizationToCompanyBankdetailRequisite
 from app.enums.object_ks import ObjectKSFields, ClientType, GasificationType, District
 from app.enums.gasification_stage import GasificationStageFields, Event, Grs2, Pad, Material
@@ -21,6 +26,7 @@ def build_payloads_object_ks_gs(house):
     gasification_stage_payload = dict()
 
     for key, value in house.items():
+        print(f"{key}:{value}")
 
         # pydantic_schema_field_name = HouseToObjectKSFields[key].value
         # bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
@@ -40,61 +46,96 @@ def build_payloads_object_ks_gs(house):
             bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
             # print(bitrix_field_name)
             object_ks_payload[bitrix_field_name] = "Y" if bool(value) else "N"
+        
+        elif key in ('type_client', 'type_house_gazification', 'district'):
+            crm_field = query_crm_field_by_elem_value(value)
+            if not crm_field:
+                continue
+            field_name_unified = crm_field["field_name_unified"]
+            elem_id = crm_field["elem_id"]
+            object_ks_payload[field_name_unified] = elem_id
+        
+        elif key in ('grs', 'type_packing', 'type_pipe_material', 'type_spdg_action'):
+            crm_field = query_crm_field_by_elem_value(value)
+            if not crm_field:
+                continue
+            field_name_unified = crm_field["field_name_unified"]
+            elem_id = crm_field["elem_id"]
+            gasification_stage_payload[field_name_unified] = elem_id
 
-        elif key == "type_client":
-            pydantic_schema_field_name = HouseToObjectKSFields[key].value
-            bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
-            object_ks_payload[bitrix_field_name] = ClientType(value).value
 
-        elif key == "type_house_gazification":
-            pydantic_schema_field_name = HouseToObjectKSFields[key].value
-            bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
-            object_ks_payload[bitrix_field_name] = GasificationType(value).value
+        # elif key == "type_client":
+        #     pydantic_schema_field_name = HouseToObjectKSFields[key].value
+        #     bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
+        #     object_ks_payload[bitrix_field_name] = ClientType(value).value
 
-        elif key == "district":
-            pydantic_schema_field_name = HouseToObjectKSFields[key].value
-            bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
-            object_ks_payload[bitrix_field_name] = District(value).value
+        # elif key == "type_house_gazification":
+        #     pydantic_schema_field_name = HouseToObjectKSFields[key].value
+        #     bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
+        #     object_ks_payload[bitrix_field_name] = GasificationType(value).value
 
-        elif key in ("cadastr_number", "cadastr_number_oks", "address", "organization"): # Что делать с organization?
+        # elif key == "district":
+        #     pydantic_schema_field_name = HouseToObjectKSFields[key].value
+        #     bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
+        #     object_ks_payload[bitrix_field_name] = District(value).value
+
+        elif key in ("cadastr_number", "cadastr_number_oks", "address", "contact_id", "company_id"):
             pydantic_schema_field_name = HouseToObjectKSFields[key].value
             bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
             object_ks_payload[bitrix_field_name] = value
         
-        elif key == "grs":
-            pydantic_schema_field_name = HouseToGasificationStageFields[key].value
-            bitrix_field_name = GasificationStageFields[pydantic_schema_field_name].value
-            gasification_stage_payload[bitrix_field_name] = Grs2(value).value
+        # elif key == "grs":
+        #     pydantic_schema_field_name = HouseToGasificationStageFields[key].value
+        #     bitrix_field_name = GasificationStageFields[pydantic_schema_field_name].value
+        #     gasification_stage_payload[bitrix_field_name] = Grs2(value).value
 
-        elif key == "type_packing":
-            pydantic_schema_field_name = HouseToGasificationStageFields[key].value
-            bitrix_field_name = GasificationStageFields[pydantic_schema_field_name].value
-            gasification_stage_payload[bitrix_field_name] = Pad(value).value
+        # elif key == "type_packing":
+        #     pydantic_schema_field_name = HouseToGasificationStageFields[key].value
+        #     bitrix_field_name = GasificationStageFields[pydantic_schema_field_name].value
+        #     gasification_stage_payload[bitrix_field_name] = Pad(value).value
 
-        elif key == "type_pipe_material":
-            pydantic_schema_field_name = HouseToGasificationStageFields[key].value
-            bitrix_field_name = GasificationStageFields[pydantic_schema_field_name].value
-            gasification_stage_payload[bitrix_field_name] = Material(value).value
+        # elif key == "type_pipe_material":
+        #     pydantic_schema_field_name = HouseToGasificationStageFields[key].value
+        #     bitrix_field_name = GasificationStageFields[pydantic_schema_field_name].value
+        #     gasification_stage_payload[bitrix_field_name] = Material(value).value
         
-        elif key == "type_spdg_action":
-            pydantic_schema_field_name = HouseToGasificationStageFields[key].value
-            bitrix_field_name = GasificationStageFields[pydantic_schema_field_name].value
-            gasification_stage_payload[bitrix_field_name] = Event(value).value
+        # elif key == "type_spdg_action":
+        #     pydantic_schema_field_name = HouseToGasificationStageFields[key].value
+        #     bitrix_field_name = GasificationStageFields[pydantic_schema_field_name].value
+        #     gasification_stage_payload[bitrix_field_name] = Event(value).value
+
+        elif key in ('contact_id', 'company_id'):
+            if key == "contact_id":
+                gasification_stage_payload["contactId"] = value
+            else:
+                gasification_stage_payload["companyId"] = value
 
         else:
             pydantic_schema_field_name = HouseToGasificationStageFields[key].value
             bitrix_field_name = GasificationStageFields[pydantic_schema_field_name].value
             gasification_stage_payload[bitrix_field_name] = value
 
-    
     return object_ks_payload, gasification_stage_payload
 
-@router.get("/house/{id}")
-def sync_with_db_house_endpoint(id: int) -> dict:
+
+@router.get("/house/{id}/contract_id/{contract_crm_id}")
+def sync_with_db_house_endpoint(id: int, contract_crm_id: Optional[int] = None) -> dict:
     '''Эндпоинт для синхронизации битрикс-сущностей Объект КС и Этапы газификации с таблицей house'''
 
     # Получаем house из БД
     house = query_house_by_id(id) 
+    house_owner = query_house_owner_by_house(id)
+    #если пустой contact_crm_id но не  пустой id_person, то синхроним его и перезапрашиваем
+    if house_owner["id_person"] and not house_owner["contact_crm_id"]:
+        sync_with_db_person_endpoint(house_owner["id_person"], id)
+        house_owner = query_house_owner_by_house(id)
+    # если пустой company_crm_id но не  пустой id_organization, то синхроним его
+    if house_owner["id_organization"] and not house_owner["company_crm_id"]:
+        sync_with_db_organization_endpoint(house_owner["id_organization"], id)
+        house_owner = query_house_owner_by_house(id)
+
+    house["contact_id"] = house_owner["contact_crm_id"]
+    house["company_id"] = house_owner["company_crm_id"]
 
     # Возвращаем ошибку, если house пустой
     if not house:
@@ -105,6 +146,14 @@ def sync_with_db_house_endpoint(id: int) -> dict:
 
     # Собираем payload для Объекта КС и Этапа газификации, который будет отправлен в битрикс
     object_ks_payload, gasification_stage_payload = build_payloads_object_ks_gs(house)
+
+    if contract_crm_id:
+        object_ks_payload["parentId1078"] = contract_crm_id
+
+    # return {
+    #     "object_ks_payload": object_ks_payload,
+    #     "gasification_stage_payload": gasification_stage_payload
+    # }
 
     # Если object_ks_crm_id не null, значит объект КС в битриксе существует, вызываем процедуру обновления
     if object_ks_crm_id:
@@ -193,8 +242,8 @@ def build_payload_contact_address(person, requisite_id):
     
     return address_payload
 
-@router.get("/person/{id}")
-def sync_with_db_person_endpoint(id: int) -> dict:
+@router.get("/person/{id}/objectks/{object_ks_id}")
+def sync_with_db_person_endpoint(id: int, object_ks_id: Optional[int]) -> dict:
     '''Эндпоинт для синхронизации битрикс-контактов с таблицей person'''
 
     # Достаем person из БД по id
@@ -210,6 +259,9 @@ def sync_with_db_person_endpoint(id: int) -> dict:
 
     #Собираем payload для создания/обновления битрикс-контакта
     contact_payload = build_payload_contact(person)
+
+    if object_ks_id:
+        contact_payload["parentId1066"] = object_ks_id
 
     # Если контакт уже существует в битрикс, то запускаем процедуру обновления
     if bitrix_contact_id:
@@ -320,8 +372,8 @@ def build_payload_company_bankdetail_requisite(organization, requisite_id):
     
     return bankdetail_requisite_payload
 
-@router.get("/organization/{id}")
-def sync_with_db_organization_endpoint(id: int):
+@router.get("/organization/{id}/objectks/{object_ks_id}")
+def sync_with_db_organization_endpoint(id: int, object_ks_id: Optional[int]):
 
     # Достаём организацию из БД по id
     organization: dict = query_organization_by_id(id)
@@ -338,6 +390,9 @@ def sync_with_db_organization_endpoint(id: int):
 
     # Собираем payload компании для отправки в битрикс
     company_payload, preset_id = build_payload_company(organization)
+
+    if object_ks_id:
+        company_payload["parentId1066"] = object_ks_id
 
     # Если компания в битриксе уже существует, то обновляем
     if bitrix_company_id:
