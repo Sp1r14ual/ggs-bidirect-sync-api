@@ -159,3 +159,15 @@ class ContractToContract(Enum):
     subject = "ufCrm13_1751261952"
     contract_category_name = "ufCrm13_1751261436"
     crm_category = "ufCrm13_1751261513"
+
+class NetToPlatform(Enum):
+    sys_old = "ufCrm12_1739509219"
+    name = "ufCrm12_1739509226"
+    gro_name = "ufCrm12_1739509237"
+    town_name = "ufCrm12_1739513375"
+    status_name = "ufCrm12_1739514984"
+    houses_cnt = "ufCrm12_1739514995"
+    consumer_type_name = "ufCrm12_1739515028"
+    district_name  = "ufCrm12_1743425507"
+    remark = "ufCrm12_1761120404503"
+

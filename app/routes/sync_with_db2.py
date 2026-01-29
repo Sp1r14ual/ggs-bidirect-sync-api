@@ -304,8 +304,11 @@ def sync_with_db_contracts_endpoint(contract_id: int):
     }
 
 
-def build_payload_ground(ground):
-    pass
+def build_payload_ground(ground: dict):
+
+    for key, value in ground.items():
+        if key in ("gro_name", "town_name", "status_name", "consumer_type_name", "district_name"):
+            pass
 
 @router.get("/ground/{ground_id}")
 def sync_with_db_ground_endpoint(ground_id: int):
@@ -315,5 +318,11 @@ def sync_with_db_ground_endpoint(ground_id: int):
 
     if not ground:
         raise HTTPException(status_code=400, detail="Contract not found")
+
+
+    ground_payload = build_payload_ground(ground)
     
-    return ground
+    return {
+        "ground": ground,
+        "ground_payload": ground_payload
+    }
