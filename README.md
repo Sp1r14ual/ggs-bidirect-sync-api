@@ -117,6 +117,7 @@ VALUES
     (18, 'частично ГГС');
 
 alter table net add crm_id_district int references zm.district(id)
+alter table [dbo].[net] add ground_crm_id integer
 ```
 
 ### 6. Документация API
