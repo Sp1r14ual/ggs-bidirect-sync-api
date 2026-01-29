@@ -31,7 +31,8 @@ def query_net_by_id(id: int):
             Net.houses_cnt,
             tnc.name.label('consumer_type_name'),
             d.name.label('district_name'),
-            Net.remark
+            Net.remark,
+            Net.ground_crm_id
         ).select_from(Net)\
         .outerjoin(g, Net.crm_id_gro == g.id)\
         .outerjoin(t, Net.id_town == t.id)\
@@ -50,16 +51,15 @@ def query_net_by_id(id: int):
 
         return result_mapping
 
-# def update_house_with_crm_ids(id: int, object_ks_crm_id: int, gasification_stage_crm_id: int):
-#     with Session(autoflush=False, bind=engine) as session:
-#         query = (
-#             update(House)
-#             .where(House.id == id)
-#             .values(
-#                 object_ks_crm_id=object_ks_crm_id,
-#                 gasification_stage_crm_id=gasification_stage_crm_id
-#             )
-#         )
+def update_net_with_crm_id(id: int, ground_crm_id: int):
+    with Session(autoflush=False, bind=engine) as session:
+        query = (
+            update(Net)
+            .where(Net.id == id)
+            .values(
+                ground_crm_id=ground_crm_id
+            )
+        )
 
-#         result = session.execute(query)
-#         session.commit()
+        result = session.execute(query)
+        session.commit()

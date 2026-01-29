@@ -160,7 +160,7 @@ class ContractToContract(Enum):
     contract_category_name = "ufCrm13_1751261436"
     crm_category = "ufCrm13_1751261513"
 
-class NetToPlatform(Enum):
+class NetToGround(Enum):
     sys_old = "ufCrm12_1739509219"
     name = "ufCrm12_1739509226"
     gro_name = "ufCrm12_1739509237"

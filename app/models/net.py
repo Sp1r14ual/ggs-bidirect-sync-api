@@ -17,5 +17,7 @@ class Net(Base):
     id_town = Column(Integer, ForeignKey('town.id'))
     id_type_net_status = Column(Integer, ForeignKey('type_net_status.id'))
     id_type_net_consumer = Column(Integer, ForeignKey('type_net_consumer.id'))
+    ground_crm_id = Column(Integer)
+
 
 
