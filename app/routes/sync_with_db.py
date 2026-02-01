@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Any
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse
@@ -18,6 +18,11 @@ from app.db.query_crm_fields import query_crm_field_by_elem_value
 from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasificationStageFields, PersonToContactFields, PersonToContactRequisite, PersonToAddress, OrganizationToCompanyFields, OrganizationToAddress, OrganizationToCompanyRequisite, OrganizationToCompanyBankdetailRequisite
 from app.enums.object_ks import ObjectKSFields, ClientType, GasificationType, District
 from app.enums.gasification_stage import GasificationStageFields, Event, Grs2, Pad, Material
+####################################
+import app.settings as settings
+import app.enums.db_bitrix_fields_mapping as field_mapper
+import app.db.query_crm_fields as crm_fields_db
+import app.bitrix.forward_sync as forward_sync_bitrix
 
 router = APIRouter(prefix="/bidirect_sync", tags=["bidirect_sync"])
 
@@ -79,7 +84,7 @@ def build_payloads_object_ks_gs(house):
         #     bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
         #     object_ks_payload[bitrix_field_name] = District(value).value
 
-        elif key in ("cadastr_number", "cadastr_number_oks", "address", "contact_id", "company_id"):
+        elif key in ("cadastr_number", "cadastr_number_oks", "address"):
             pydantic_schema_field_name = HouseToObjectKSFields[key].value
             bitrix_field_name = ObjectKSFields[pydantic_schema_field_name].value
             object_ks_payload[bitrix_field_name] = value
@@ -117,19 +122,97 @@ def build_payloads_object_ks_gs(house):
 
     return object_ks_payload, gasification_stage_payload
 
+# Убрать в utils
+def get_bool_value(value: Any) -> str:
+    return "Y" if bool(value) else "N"
 
-@router.post("/house/{id}/contract_id/{contract_crm_id}")
+# Убрать в utils
+def address_builder(components: dict) -> str:
+    postal_index = components.get("postal_index")
+    town = components.get("town")
+    street = components.get("street")
+    house_number = components.get("house_number")
+    corpus_number = components.get("corpus_number")
+    flat_number = components.get("flat_number")
+    return ", ".join(map(str, [postal_index, town, street, house_number, corpus_number, flat_number]))
+
+# Убрать в utils
+def build_payloads_object_ks_gs2(house):
+
+    object_ks_payload = dict()
+    gasification_stage_payload = dict()
+
+    # Ставим плейсхолдер для адреса
+    object_ks_payload["address"] = None
+
+    try:
+        for key, value in house.items():
+            if key in ("postal_index", "town", "street", "house_number", "corpus_number", "flat_number",
+            "object_ks_crm_id", "gasification_stage_crm_id"):
+                continue
+
+            if key in ("is_to_from_sibgs", "is_double_adress", "is_ods"):
+                field_ru_label = field_mapper.HouseToObjectKSFields[key].value
+                field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.OBJECT_KS_ENTITY_ID)
+                object_ks_payload[field["field_name_unified"]] = get_bool_value(value)
+                continue
+
+            if key == "district":
+                field = crm_fields_db.query_crm_field_by_iblock_element_value(value, settings.settings.OBJECT_KS_ENTITY_ID)
+                object_ks_payload[field["field_name_unified"]] = field["iblock_element_id"]
+                continue
+
+            if key in ('id', 'type_client', 'type_house_gazification', "cadastr_number", "cadastr_number_oks"):
+                field_ru_label = field_mapper.HouseToObjectKSFields[key].value
+                field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.OBJECT_KS_ENTITY_ID)
+                object_ks_payload[field["field_name_unified"]] = value
+                continue
+
+            if key in ('grs', 'type_packing', 'type_pipe_material', 'type_spdg_action'):
+                field_ru_label = field_mapper.HouseToGasificationStageFields[key].value
+                field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.GASIFICATION_STAGE_ENTITY_ID)
+                gasification_stage_payload[field["field_name_unified"]] = value
+                continue
+
+            if key == "address":
+                field_ru_label = field_mapper.HouseToObjectKSFields[key].value
+                field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.OBJECT_KS_ENTITY_ID)
+                address = address_builder(house)
+                object_ks_payload[field["field_name_unified"]] = address
+                continue
+
+            if key in ('contact_id', 'company_id'):
+                if key == "contact_id":
+                    gasification_stage_payload["contactId"] = value
+                else:
+                    gasification_stage_payload["companyId"] = value
+                continue
+
+            field_ru_label = field_mapper.HouseToGasificationStageFields[key].value
+            field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.GASIFICATION_STAGE_ENTITY_ID)
+            gasification_stage_payload[field["field_name_unified"]] = value
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"attr": f"key:{key}, value:{value}", "err": str(e)})
+    
+    return object_ks_payload, gasification_stage_payload
+
+
+# @router.post("/house/{id}/contract_id/{contract_crm_id}")
+@router.post("/house/{id}")
 def sync_with_db_house_endpoint(id: int, contract_crm_id: Optional[int] = None) -> dict:
     '''Эндпоинт для синхронизации битрикс-сущностей Объект КС и Этапы газификации с таблицей house'''
 
-    # Получаем house из БД
-    house = query_house_by_id(id) 
+    # Получаем house и house_owner из БД
+    house = query_house_by_id(id)
     house_owner = query_house_owner_by_house(id)
-    #если пустой contact_crm_id но не  пустой id_person, то синхроним его и перезапрашиваем
+
+    #если пустой contact_crm_id, но не пустой id_person, то синхроним его и перезапрашиваем
     if house_owner["id_person"] and not house_owner["contact_crm_id"]:
         sync_with_db_person_endpoint(house_owner["id_person"], id)
         house_owner = query_house_owner_by_house(id)
-    # если пустой company_crm_id но не  пустой id_organization, то синхроним его
+
+    # если пустой company_crm_id, но не пустой id_organization, то синхроним его
     if house_owner["id_organization"] and not house_owner["company_crm_id"]:
         sync_with_db_organization_endpoint(house_owner["id_organization"], id)
         house_owner = query_house_owner_by_house(id)
@@ -145,8 +228,10 @@ def sync_with_db_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
     object_ks_crm_id, gasification_stage_crm_id = house["object_ks_crm_id"], house["gasification_stage_crm_id"]
 
     # Собираем payload для Объекта КС и Этапа газификации, который будет отправлен в битрикс
-    object_ks_payload, gasification_stage_payload = build_payloads_object_ks_gs(house)
+    # object_ks_payload, gasification_stage_payload = build_payloads_object_ks_gs(house)
+    object_ks_payload, gasification_stage_payload = build_payloads_object_ks_gs2(house)
 
+    # !!! доставать id договора из БД 
     if contract_crm_id:
         object_ks_payload["parentId1078"] = contract_crm_id
 
@@ -157,22 +242,24 @@ def sync_with_db_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
 
     # Если object_ks_crm_id не null, значит объект КС в битриксе существует, вызываем процедуру обновления
     if object_ks_crm_id:
-        res = object_ks_update_util(object_ks_crm_id, object_ks_payload)
+        res = forward_sync_bitrix.update_item(object_ks_crm_id, settings.settings.OBJECT_KS_TYPE_ID, object_ks_payload)
         print(res)
     # Иначе создаем новый Объект КС в битриксе и сохраняем его id
     else:
-        object_ks_crm_id = object_ks_add_util(object_ks_payload)["id"]
+        object_ks_crm_id = forward_sync_bitrix.add_item(settings.settings.OBJECT_KS_TYPE_ID, object_ks_payload)["id"]
 
     # Сохраняем id Объекта КС в payload этапа газификации к битриксу
     gasification_stage_payload["parentId1066"] = object_ks_crm_id
 
     # Если gasification_stage_crm_id не null, значит этап газификации в битриксе существует, вызываем процедуру обновления
     if gasification_stage_crm_id:
-        res = gasification_stage_update_util(gasification_stage_crm_id, gasification_stage_payload)
+        # res = gasification_stage_update_util(gasification_stage_crm_id, gasification_stage_payload)
+        res = forward_sync_bitrix.update_item(gasification_stage_crm_id, settings.settings.GASIFICATION_STAGE_TYPE_ID, gasification_stage_payload)
         print(res)
     # Иначе создаем новый этап газификации в битриксе и сохраняем его id
     else:
-        gasification_stage_crm_id = gasification_stage_add_util(gasification_stage_payload)["id"]
+        # gasification_stage_crm_id = gasification_stage_add_util(gasification_stage_payload)["id"]
+        gasification_stage_crm_id = forward_sync_bitrix.add_item(settings.settings.GASIFICATION_STAGE_TYPE_ID, gasification_stage_payload)["id"]
 
     # Добавляем crm_id в house
     update_house_with_crm_ids(id, object_ks_crm_id, gasification_stage_crm_id)
