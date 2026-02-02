@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     EQUIP_ENTITY_ID: str
     EQUIP_TYPE_ID: int
 
+    CONTRACT_ENTITY_ID: str
+    CONTRACT_TYPE_ID: int
+
     model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings()

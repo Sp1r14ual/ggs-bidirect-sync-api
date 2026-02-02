@@ -9,6 +9,7 @@ import app.utils.object_ks_gs as object_ks_gs_utils
 import app.utils.contact as contact_utils
 import app.utils.company as company_utils
 import app.utils.equip as equip_utils
+import app.utils.contract as contract_utils
 import app.settings as settings
 import app.db.query_house as query_house
 import app.db.query_house_owner as query_house_owner
@@ -16,12 +17,13 @@ import app.db.query_person as query_person
 import app.db.query_organization as query_organization
 import app.db.query_equip as query_equip
 import app.db.query_house_equip as query_house_equip
+import app.db.query_contract as query_contract
 
 router = APIRouter(prefix="/forward_sync", tags=["forward_sync"])
 
 # @router.post("/house/{id}/contract_id/{contract_crm_id}")
 @router.post("/house/{id}")
-def sync_with_db_house_endpoint(id: int, contract_crm_id: Optional[int] = None) -> dict:
+def forward_sync_house_endpoint(id: int, contract_crm_id: Optional[int] = None) -> dict:
     '''Эндпоинт для синхронизации битрикс-сущностей Объект КС и Этапы газификации с таблицей house'''
 
     # Получаем house и house_owner из БД
@@ -30,12 +32,12 @@ def sync_with_db_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
 
     #если пустой contact_crm_id, но не пустой id_person, то синхроним его и перезапрашиваем
     if house_owner["id_person"] and not house_owner["contact_crm_id"]:
-        sync_with_db_person_endpoint(house_owner["id_person"], id)
+        forward_sync_person_endpoint(house_owner["id_person"], id)
         house_owner = query_house_owner.query_house_owner_by_house(id)
 
     # если пустой company_crm_id, но не пустой id_organization, то синхроним его
     if house_owner["id_organization"] and not house_owner["company_crm_id"]:
-        sync_with_db_organization_endpoint(house_owner["id_organization"], id)
+        forward_sync_organization_endpoint(house_owner["id_organization"], id)
         house_owner = query_house_owner.query_house_owner_by_house(id)
 
     house["contact_id"] = house_owner["contact_crm_id"]
@@ -93,7 +95,7 @@ def sync_with_db_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
 
 # @router.post("/person/{id}/objectks/{object_ks_id}")
 @router.post("/person/{id}")
-def sync_with_db_person_endpoint(id: int, object_ks_id: Optional[int] = None) -> dict:
+def forward_sync_person_endpoint(id: int, object_ks_id: Optional[int] = None) -> dict:
     '''Эндпоинт для синхронизации битрикс-контактов с таблицей person'''
 
     # Достаем person из БД по id
@@ -153,7 +155,7 @@ def sync_with_db_person_endpoint(id: int, object_ks_id: Optional[int] = None) ->
 
 # @router.post("/organization/{id}/objectks/{object_ks_id}")
 @router.post("/organization/{id}")
-def sync_with_db_organization_endpoint(id: int, object_ks_id: Optional[int] = None):
+def forward_sync_organization_endpoint(id: int, object_ks_id: Optional[int] = None):
 
     # Достаём организацию из БД по id
     organization: dict = query_organization.query_organization_by_id(id)
@@ -232,7 +234,7 @@ def sync_with_db_organization_endpoint(id: int, object_ks_id: Optional[int] = No
     }
 
 @router.post("/equip/{equip_id}/house_equip/{house_equip_id}")
-def sync_with_db_equip_endpoint(equip_id: int, house_equip_id: int):
+def forward_sync_equip_endpoint(equip_id: int, house_equip_id: int):
     # Достаём оборудование из БД по id
     equip: dict = query_equip.query_equip_by_id(equip_id)
     house_equip: dict = query_house_equip.query_house_equip_by_id(house_equip_id)
@@ -266,4 +268,57 @@ def sync_with_db_equip_endpoint(equip_id: int, house_equip_id: int):
         "equip_id": equip_id,
         "house_equip_id": house_equip_id,
         "equip_crm_id": equip_crm_id
+    }
+
+@router.post("/contract/{contract_id}")
+def forward_sync_contracts_endpoint(contract_id: int):
+    # Достаём оборудование из БД по id
+    contract: dict = query_contract.query_contract_by_id(contract_id)
+
+    if not contract:
+        raise HTTPException(status_code=400, detail="Contract not found")
+
+    # если пустой contact_crm_id но не пустой id_person, то синхроним его и перезапрашиваем
+    if contract["id_person"] and not contract["contact_crm_id"]:
+        forward_sync_person_endpoint(contract["id_person"], contract["object_ks_crm_id"])
+        contract = query_contract.query_contract_by_id(contract_id)
+        
+    # если пустой company_crm_id но не пустой id_organization, то синхроним его
+    if contract["id_organization"] and not contract["company_crm_id"]:
+        forward_sync_organization_endpoint(contract["id_organization"], contract["object_ks_crm_id"])
+        contract = query_contract.query_contract_by_id(contract_id)
+
+    if contract["id_house"] and not contract["object_ks_crm_id"]:
+        forward_sync_house_endpoint(contract["id_house"])
+        contract = query_contract.query_contract_by_id(contract_id)
+
+    # Собираем payload договора для отправки в битрикс
+    contract_payload = contract_utils.build_payload_contract(contract)
+
+    if contract["object_ks_crm_id"]:
+        contract_payload["parentId1066"] = contract["object_ks_crm_id"]
+
+    # return {
+    #     "contract_db": contract,
+    #     "contract_payload_bitrix": contract_payload
+    # }
+
+    #Вытаскиваем crm_id
+    contract_crm_id = contract["contract_crm_id"]
+
+    # Проверяем, если contract_crm_id не null в обеих таблицах, то обновляем, иначе создаем новую
+    if contract["contract_crm_id"]:
+        res = forward_sync_bitrix.update_item(contract_crm_id, settings.settings.CONTRACT_TYPE_ID, contract_payload)
+    else:
+        contract_crm_id = forward_sync_bitrix.add_item(settings.settings.CONTRACT_TYPE_ID, contract_payload)["id"]
+
+    # Обновляем таблицу
+    query_contract.update_contract_with_crm_id(contract_id, contract_crm_id)
+
+    # Ещё раз вызываем синхронизацию, чтобы записать id договора в объект кс
+    forward_sync_house_endpoint(contract["id_house"], contract_crm_id)
+   
+    return {
+        "contract_id": contract_id,
+        "contract_crm_id": contract_crm_id
     }
