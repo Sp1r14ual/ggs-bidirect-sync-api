@@ -10,6 +10,9 @@ class Settings(BaseSettings):
 
     GASIFICATION_STAGE_ENTITY_ID: str
     GASIFICATION_STAGE_TYPE_ID: int
+
+    CONTACT_ENTITY_ID: str
+    COMPANY_ENTITY_ID: str
     
     model_config = SettingsConfigDict(env_file=".env")
 

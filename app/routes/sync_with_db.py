@@ -4,24 +4,20 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse
 
-from app.bitrix.contact import add_item_for_db_sync as contact_add_util, update_item_for_db_sync as contact_update_util
 from app.bitrix.company import add_item_for_db_sync as company_add_util, update_item_for_db_sync as company_update_util
-from app.bitrix.requisite import add_item_for_db_sync as requisite_add_util, update_item_for_db_sync as requisite_update_util
 from app.bitrix.requisite_bankdetail import add_item_for_db_sync as requisite_bankdetail_add_util, update_item_for_db_sync as requisite_bankdetail_update_util
-from app.bitrix.address import add_item_for_db_sync as address_add_util, update_item_for_db_sync as address_update_util
 
-from app.db.query_contact import query_person_by_id, update_person_with_crm_ids
 from app.db.query_company import query_organization_by_id, update_organization_with_crm_ids
 
 from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasificationStageFields, PersonToContactFields, PersonToContactRequisite, PersonToAddress, OrganizationToCompanyFields, OrganizationToAddress, OrganizationToCompanyRequisite, OrganizationToCompanyBankdetailRequisite
-from app.enums.object_ks import ObjectKSFields, ClientType, GasificationType, District
-from app.enums.gasification_stage import GasificationStageFields, Event, Grs2, Pad, Material
 ####################################
 import app.bitrix.forward_sync as forward_sync_bitrix
 import app.utils.object_ks_gs as object_ks_gs_utils
+import app.utils.contact as contact_utils
 import app.settings as settings
 import app.db.query_house as query_house
 import app.db.query_house_owner as query_house_owner
+import app.db.query_person as query_person
 
 router = APIRouter(prefix="/forward_sync", tags=["forward_sync"])
 
@@ -55,8 +51,7 @@ def sync_with_db_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
     object_ks_crm_id, gasification_stage_crm_id = house["object_ks_crm_id"], house["gasification_stage_crm_id"]
 
     # Собираем payload для Объекта КС и Этапа газификации, который будет отправлен в битрикс
-    # object_ks_payload, gasification_stage_payload = build_payloads_object_ks_gs(house)
-    object_ks_payload, gasification_stage_payload = object_ks_gs_utils.build_payloads_object_ks_gs2(house)
+    object_ks_payload, gasification_stage_payload = object_ks_gs_utils.build_payloads_object_ks_gs(house)
 
     # !!! доставать id договора из БД 
     if contract_crm_id:
@@ -98,70 +93,13 @@ def sync_with_db_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
         "gasification_stage_crm_id": gasification_stage_crm_id
     }
 
-
-def build_payload_contact(person):
-    contact_payload = {}
-
-    #Добавить конвертацию bool полей
-    for key, value in person.items():
-        if key not in PersonToContactFields.__members__:
-            continue
-
-        bitrix_field_name = PersonToContactFields[key].value
-        contact_payload[bitrix_field_name] = value
-    
-    return contact_payload
-
-def build_payload_contact_requisite(person, contact_id):
-    requisite_payload = {"ENTITY_TYPE_ID": 3, 
-                        "ENTITY_ID": contact_id, 
-                        "PRESET_ID": 3,
-                        "NAME": " ".join([person["family_name"], person["name"], person["patronimic_name"]])}
-
-    for key, value in person.items():
-        if key not in PersonToContactRequisite.__members__:
-            continue
-
-        bitrix_field_name = PersonToContactRequisite[key].value
-        requisite_payload[bitrix_field_name] = value
-    
-    return requisite_payload
-
-def build_payload_contact_address(person, requisite_id):
-    address_payload = {
-        "TYPE_ID": 4, # Адрес регистраци
-        "ENTITY_TYPE_ID": 8, # Реквизиты
-        "ENTITY_ID": requisite_id
-    }
-
-    ADDRESS_2 = ""
-
-    for key, value in person.items():
-        if key not in PersonToAddress.__members__:
-            continue
-        
-        if key == "reg_address":
-            bitrix_field_name = PersonToAddress[key].value
-            reg_address_payload[bitrix_field_name] = value
-            continue
-
-        if key in ("reg_street", "reg_house", "reg_house"):
-            ADDRESS_2 += str(value) + ", "
-            continue
-
-        bitrix_field_name = PersonToAddress[key].value
-        address_payload[bitrix_field_name] = value
-
-    address_payload["ADDRESS_2"] = ADDRESS_2
-    
-    return address_payload
-
-@router.post("/person/{id}/objectks/{object_ks_id}")
-def sync_with_db_person_endpoint(id: int, object_ks_id: Optional[int]) -> dict:
+# @router.post("/person/{id}/objectks/{object_ks_id}")
+@router.post("/person/{id}")
+def sync_with_db_person_endpoint(id: int, object_ks_id: Optional[int] = None) -> dict:
     '''Эндпоинт для синхронизации битрикс-контактов с таблицей person'''
 
     # Достаем person из БД по id
-    person: dict = query_person_by_id(id)
+    person: dict = query_person.query_person_by_id(id)
 
     if not person:
         raise HTTPException(status_code=400, detail="Person not found")
@@ -172,39 +110,41 @@ def sync_with_db_person_endpoint(id: int, object_ks_id: Optional[int]) -> dict:
     crm_contact_address: bool = person["has_crm_address"]
 
     #Собираем payload для создания/обновления битрикс-контакта
-    contact_payload = build_payload_contact(person)
+    contact_payload = contact_utils.build_payload_contact(person)
 
+    # !!! Сделать получение id домовладения из БД
     if object_ks_id:
         contact_payload["parentId1066"] = object_ks_id
 
     # Если контакт уже существует в битрикс, то запускаем процедуру обновления
     if bitrix_contact_id:
-        res = contact_update_util(bitrix_contact_id, contact_payload)
+        res = forward_sync_bitrix.update_contact(bitrix_contact_id, contact_payload)
     # Иначе создаем новый контакт в битриксе 
     else:
-        bitrix_contact_id = contact_add_util(contact_payload)
+        bitrix_contact_id = forward_sync_bitrix.add_contact(contact_payload)
 
     # Собираем payload реквизитов контакта для отправки в битрикс
-    contact_requisite_payload = build_payload_contact_requisite(person, bitrix_contact_id)
+    contact_requisite_payload = contact_utils.build_payload_contact_requisite(person, bitrix_contact_id)
 
+    # Если реквизит существует, то обновляем
     if requisite_contact_id:
-        res = requisite_update_util(requisite_contact_id, contact_requisite_payload)
-    # Иначе создаем новый контакт в битриксе 
+        res = forward_sync_bitrix.update_requisite(requisite_contact_id, contact_requisite_payload)
+    # Иначе создаем новый
     else:
-        requisite_contact_id = requisite_add_util(contact_requisite_payload)
+        requisite_contact_id = forward_sync_bitrix.add_requisite(contact_requisite_payload)
 
     # Собираем payload адреса, который будет вложен в реквизиты контакта в битриксе
-    contact_address_payload = build_payload_contact_address(person, requisite_contact_id)
+    contact_address_payload = contact_utils.build_payload_contact_address(person, requisite_contact_id)
 
     # Если адрес уже существует у контакта в битриксе, запускаем процедуру обновления
     if crm_contact_address:
-        has_crm_address = address_update_util(contact_address_payload)
+        has_crm_address = forward_sync_bitrix.update_address(contact_address_payload)
     # Иначе создаем новый адрес
     else:
-        has_crm_address = address_add_util(contact_address_payload)
+        has_crm_address = forward_sync_bitrix.add_address(contact_address_payload)
 
     # Обновляем все связные id-шники в таблице organization
-    update_person_with_crm_ids(id, bitrix_contact_id, requisite_contact_id, has_crm_address)
+    query_person.update_person_with_crm_ids(id, bitrix_contact_id, requisite_contact_id, has_crm_address)
 
     return {
         "person_id": id,

@@ -43,3 +43,37 @@ class HouseToGasificationStageFields(Enum):
     type_packing = "прокладка:"
     type_pipe_material = "материал:"
     grs_diam = "диаметр:"
+
+class PersonToContactFields(Enum):
+    family_name = "LAST_NAME"
+    birthdate = "BIRTHDATE"
+    phone_number = "PHONE"
+    name = "NAME"
+    patronimic_name = "SECOND_NAME"
+    snils = "СНИЛС"
+
+
+class PersonToContactRequisite(Enum):
+    family_name = "RQ_LAST_NAME"
+    name = "RQ_FIRST_NAME"
+    patronimic_name = "RQ_SECOND_NAME"
+    phone_number = "RQ_PHONE"
+    pasport_serial = "RQ_IDENT_DOC_SER"
+    pasport_number = "RQ_IDENT_DOC_NUM"
+    pasport_date = "RQ_IDENT_DOC_DATE"
+    pasport_place = "RQ_IDENT_DOC_ISSUED_BY"
+    dep_code = "RQ_IDENT_DOC_DEP_CODE"
+    inn = "RQ_INN"
+    ogrn = "RQ_OGRN"
+    email = "RQ_EMAIL"
+
+
+class PersonToAddress(Enum):
+    reg_adress = "ADDRESS_1"
+    reg_region = "PROVINCE"
+    reg_raion = "REGION"
+    reg_city = "CITY"
+    reg_street = ""
+    reg_house = ""
+    reg_flat = ""
+    postal_index = "POSTAL_CODE"

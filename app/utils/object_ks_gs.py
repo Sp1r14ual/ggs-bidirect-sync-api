@@ -2,11 +2,9 @@ import app.enums.db_bitrix_fields_mapping as field_mapper
 import app.db.query_crm_fields as crm_fields_db
 import app.settings as settings
 
-# Убрать в utils
 def get_bool_value(value):
     return "Y" if bool(value) else "N"
 
-# Убрать в utils
 def address_builder(components: dict) -> str:
     postal_index = components.get("postal_index")
     town = components.get("town")
@@ -16,8 +14,7 @@ def address_builder(components: dict) -> str:
     flat_number = components.get("flat_number")
     return ", ".join(map(str, [postal_index, town, street, house_number, corpus_number, flat_number]))
 
-# Убрать в utils
-def build_payloads_object_ks_gs2(house):
+def build_payloads_object_ks_gs(house):
 
     object_ks_payload = dict()
     gasification_stage_payload = dict()
