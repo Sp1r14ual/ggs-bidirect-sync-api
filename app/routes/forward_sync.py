@@ -4,22 +4,18 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse
 
-# from app.bitrix.company import add_item_for_db_sync as company_add_util, update_item_for_db_sync as company_update_util
-# from app.bitrix.requisite_bankdetail import add_item_for_db_sync as requisite_bankdetail_add_util, update_item_for_db_sync as requisite_bankdetail_update_util
-
-# from app.db.query_company import query_organization_by_id, update_organization_with_crm_ids
-
-# from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasificationStageFields, PersonToContactFields, PersonToContactRequisite, PersonToAddress, OrganizationToCompanyFields, OrganizationToAddress, OrganizationToCompanyRequisite, OrganizationToCompanyBankdetailRequisite
-####################################
 import app.bitrix.forward_sync as forward_sync_bitrix
 import app.utils.object_ks_gs as object_ks_gs_utils
 import app.utils.contact as contact_utils
 import app.utils.company as company_utils
+import app.utils.equip as equip_utils
 import app.settings as settings
 import app.db.query_house as query_house
 import app.db.query_house_owner as query_house_owner
 import app.db.query_person as query_person
 import app.db.query_organization as query_organization
+import app.db.query_equip as query_equip
+import app.db.query_house_equip as query_house_equip
 
 router = APIRouter(prefix="/forward_sync", tags=["forward_sync"])
 
@@ -233,4 +229,41 @@ def sync_with_db_organization_endpoint(id: int, object_ks_id: Optional[int] = No
         "bankdetail_requisite_id": bankdetail_requisite_company_id,
         "has_address_jur_company": has_address_jur_company,
         "has_address_fact_company": has_address_fact_company
+    }
+
+@router.post("/equip/{equip_id}/house_equip/{house_equip_id}")
+def sync_with_db_equip_endpoint(equip_id: int, house_equip_id: int):
+    # Достаём оборудование из БД по id
+    equip: dict = query_equip.query_equip_by_id(equip_id)
+    house_equip: dict = query_house_equip.query_house_equip_by_id(house_equip_id)
+
+    if not(equip and house_equip):
+        raise HTTPException(status_code=400, detail="Equip not found") 
+
+    # Собираем payload оборудования для отправки в битрикс
+    equip_payload = equip_utils.build_payload_equip(equip, house_equip)
+
+    # return {
+    #     "equip": equip,
+    #     "house_equip": house_equip,
+    #     "equip_payload": equip_payload
+    # }
+
+    #Вытаскиваем crm_id
+    equip_crm_id = equip["equip_crm_id"]
+
+    # Проверяем, если equip_crm_id не null в обеих таблицах, то обновляем, иначе создаем новую
+    if equip["equip_crm_id"] and house_equip["equip_crm_id"]:
+        res = forward_sync_bitrix.update_item(equip_crm_id, settings.settings.EQUIP_TYPE_ID, equip_payload)
+    else:
+        equip_crm_id = forward_sync_bitrix.add_item(settings.settings.EQUIP_TYPE_ID, equip_payload)["id"]
+
+    # Обновляем обе таблицы
+    query_equip.update_equip_with_crm_ids(equip_id, equip_crm_id)
+    query_house_equip.update_house_equip_with_crm_ids(house_equip_id, equip_crm_id)
+   
+    return {
+        "equip_id": equip_id,
+        "house_equip_id": house_equip_id,
+        "equip_crm_id": equip_crm_id
     }

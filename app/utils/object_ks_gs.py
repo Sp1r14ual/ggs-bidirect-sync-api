@@ -35,19 +35,31 @@ def build_payloads_object_ks_gs(house):
 
         if key == "district":
             field = crm_fields_db.query_crm_field_by_iblock_element_value(value, settings.settings.OBJECT_KS_ENTITY_ID)
+            if not field:
+                continue
             object_ks_payload[field["field_name_unified"]] = field["iblock_element_id"]
             continue
 
-        if key in ('id', 'type_client', 'type_house_gazification', "cadastr_number", "cadastr_number_oks"):
+        if key in ('id', "cadastr_number", "cadastr_number_oks"):
             field_ru_label = field_mapper.HouseToObjectKSFields[key].value
             field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.OBJECT_KS_ENTITY_ID)
             object_ks_payload[field["field_name_unified"]] = value
             continue
 
+        if key in ('type_client', 'type_house_gazification'):
+            # field_ru_label = field_mapper.HouseToObjectKSFields[key].value
+            field = crm_fields_db.query_crm_field_by_enum_element_value(value, settings.settings.OBJECT_KS_ENTITY_ID)
+            if not field:
+                continue
+            object_ks_payload[field["field_name_unified"]] = field["enum_element_id"]
+            continue
+
         if key in ('grs', 'type_packing', 'type_pipe_material', 'type_spdg_action'):
-            field_ru_label = field_mapper.HouseToGasificationStageFields[key].value
-            field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.GASIFICATION_STAGE_ENTITY_ID)
-            gasification_stage_payload[field["field_name_unified"]] = value
+            # field_ru_label = field_mapper.HouseToGasificationStageFields[key].value
+            field = crm_fields_db.query_crm_field_by_enum_element_value(value, settings.settings.GASIFICATION_STAGE_ENTITY_ID)
+            if not field:
+                continue
+            gasification_stage_payload[field["field_name_unified"]] = field["enum_element_id"]
             continue
 
         if key == "address":

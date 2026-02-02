@@ -97,3 +97,23 @@ class OrganizationToCompanyBankdetailRequisite(Enum):
     korr_acc = "RQ_COR_ACC_NUM"
     calc_acc = "RQ_ACC_NUM"
     bank = "RQ_BANK_NAME"
+
+class EquipToEquip(Enum):
+    packing_name = "Тип прокладки"
+    # diameter = "ufCrm47_1755666805151"
+    diameter_type_name = "ДУ"
+    length = "Протяженность, м"
+    pipe_material_name = "Материал труб"
+    amount = "Кол-во, шт"
+
+class HouseEquipToEquip(Enum):
+    equip_name = "Марка"
+    type_cat_name = "Тип оборудования"
+    boil_setup_name = "Тип установки"
+    year_produce = "Месяц, год выпуска"
+    power = "Мощность, кВт"
+    amount = "Кол-во, шт"
+    du1 = "Диаметр"
+    du2 = "ДУ"
+    meters = "Протяженность, м"
+    pg = "Тип плиты / варочной панели"

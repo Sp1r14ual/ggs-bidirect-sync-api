@@ -47,9 +47,9 @@ def query_crm_field_by_iblock_element_value(value: str, entity_id: str):
         return result_mapping
  
 
-def query_crm_field_by_elem_value(value: str):
+def query_crm_field_by_enum_element_value(value: str, entity_id: str):
     with Session(engine) as db:
-        query = (select('*').where(CrmFields.elem_value == value))
+        query = (select('*').where(and_(CrmFields.enum_element_value == value, CrmFields.entity_id == entity_id)))
         result = db.execute(query).first()
 
         if not result:
