@@ -34,3 +34,19 @@ def add_address(payload):
 def update_address(payload):
     res = b.call('crm.address.update', {"fields": payload})
     return res
+
+def add_bankdetail_requisite(payload):
+    res = b.call('crm.requisite.bankdetail.add', {"fields": payload})
+    return res
+
+def update_bankdetail_requisite(id, payload):
+    res = b.call('crm.requisite.bankdetail.update', {"id": id, "fields": payload})
+    return res
+
+def add_company(payload):
+    res = b.call('crm.company.add', {"fields": payload})
+    return res
+
+def update_company(id, payload):
+    res = b.call('crm.company.update', {"id": id, "fields": payload})
+    return res

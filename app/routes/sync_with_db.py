@@ -4,20 +4,22 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse
 
-from app.bitrix.company import add_item_for_db_sync as company_add_util, update_item_for_db_sync as company_update_util
-from app.bitrix.requisite_bankdetail import add_item_for_db_sync as requisite_bankdetail_add_util, update_item_for_db_sync as requisite_bankdetail_update_util
+# from app.bitrix.company import add_item_for_db_sync as company_add_util, update_item_for_db_sync as company_update_util
+# from app.bitrix.requisite_bankdetail import add_item_for_db_sync as requisite_bankdetail_add_util, update_item_for_db_sync as requisite_bankdetail_update_util
 
-from app.db.query_company import query_organization_by_id, update_organization_with_crm_ids
+# from app.db.query_company import query_organization_by_id, update_organization_with_crm_ids
 
-from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasificationStageFields, PersonToContactFields, PersonToContactRequisite, PersonToAddress, OrganizationToCompanyFields, OrganizationToAddress, OrganizationToCompanyRequisite, OrganizationToCompanyBankdetailRequisite
+# from app.enums.db_to_bitrix_fields import HouseToObjectKSFields, HouseToGasificationStageFields, PersonToContactFields, PersonToContactRequisite, PersonToAddress, OrganizationToCompanyFields, OrganizationToAddress, OrganizationToCompanyRequisite, OrganizationToCompanyBankdetailRequisite
 ####################################
 import app.bitrix.forward_sync as forward_sync_bitrix
 import app.utils.object_ks_gs as object_ks_gs_utils
 import app.utils.contact as contact_utils
+import app.utils.company as company_utils
 import app.settings as settings
 import app.db.query_house as query_house
 import app.db.query_house_owner as query_house_owner
 import app.db.query_person as query_person
+import app.db.query_organization as query_organization
 
 router = APIRouter(prefix="/forward_sync", tags=["forward_sync"])
 
@@ -153,84 +155,12 @@ def sync_with_db_person_endpoint(id: int, object_ks_id: Optional[int] = None) ->
         "has_crm_address": has_crm_address
     }
 
-def build_payload_company(organization: dict) -> (dict, int):
-    company_payload = {}
-
-    preset_id = 1
-
-    for key, value in organization.items():
-        if key not in OrganizationToCompanyFields.__members__:
-            continue
-
-        if key == "name" and "ИП" in value:
-            preset_id = 2
-
-        bitrix_field_name = OrganizationToCompanyFields[key].value
-        company_payload[bitrix_field_name] = value
-    
-    return company_payload, preset_id
-
-def build_payload_company_address(organization: dict, requisite_id: int) -> (dict, dict):
-    jur_address_payload = {
-        "TYPE_ID": 6, # Юридический адрес
-        "ENTITY_TYPE_ID": 8, # Реквизиты
-        "ENTITY_ID": requisite_id
-    }
-
-    fact_address_payload = {
-        "TYPE_ID": 1, # Фактический адрес
-        "ENTITY_TYPE_ID": 8, # Реквизиты
-        "ENTITY_ID": requisite_id
-    }
-
-    for key, value in organization.items():
-        if key not in OrganizationToAddress.__members__:
-            continue
-
-        if key in ("adress_jur", "zip_code_jur"):
-            bitrix_field_name = OrganizationToAddress[key].value
-            jur_address_payload[bitrix_field_name] = value
-            continue
-        
-        if key in ("adress_fact", "zip_code_fact"):
-            bitrix_field_name = OrganizationToAddress[key].value
-            fact_address_payload[bitrix_field_name] = value
-            continue
-    
-    return jur_address_payload, fact_address_payload
-
-def build_payload_company_requisite(organization, company_id, preset_id):
-    requisite_payload = {"ENTITY_TYPE_ID": 4, 
-                        "ENTITY_ID": company_id, 
-                        "PRESET_ID": preset_id,
-                        "NAME": organization["name"]}
-
-    for key, value in organization.items():
-        if key not in OrganizationToCompanyRequisite.__members__:
-            continue
-
-        bitrix_field_name = OrganizationToCompanyRequisite[key].value
-        requisite_payload[bitrix_field_name] = value
-    
-    return requisite_payload
-
-def build_payload_company_bankdetail_requisite(organization, requisite_id):
-    bankdetail_requisite_payload = {"ENTITY_ID": requisite_id, "NAME": organization["name"]}
-
-    for key, value in organization.items():
-        if key not in OrganizationToCompanyBankdetailRequisite.__members__:
-            continue
-
-        bitrix_field_name = OrganizationToCompanyBankdetailRequisite[key].value
-        bankdetail_requisite_payload[bitrix_field_name] = value
-    
-    return bankdetail_requisite_payload
-
-@router.post("/organization/{id}/objectks/{object_ks_id}")
-def sync_with_db_organization_endpoint(id: int, object_ks_id: Optional[int]):
+# @router.post("/organization/{id}/objectks/{object_ks_id}")
+@router.post("/organization/{id}")
+def sync_with_db_organization_endpoint(id: int, object_ks_id: Optional[int] = None):
 
     # Достаём организацию из БД по id
-    organization: dict = query_organization_by_id(id)
+    organization: dict = query_organization.query_organization_by_id(id)
 
     if not organization:
         raise HTTPException(status_code=400, detail="Organization not found") 
@@ -243,57 +173,58 @@ def sync_with_db_organization_endpoint(id: int, object_ks_id: Optional[int]):
     has_address_fact_company: int = organization["has_crm_fact_address"]
 
     # Собираем payload компании для отправки в битрикс
-    company_payload, preset_id = build_payload_company(organization)
+    company_payload, preset_id = company_utils.build_payload_company(organization)
 
+    # !!! Доставать из БД
     if object_ks_id:
         company_payload["parentId1066"] = object_ks_id
 
     # Если компания в битриксе уже существует, то обновляем
     if bitrix_company_id:
-        res = company_update_util(bitrix_company_id, company_payload)
+        res = forward_sync_bitrix.update_company(bitrix_company_id, company_payload)
     # Иначе создаем новую компанию
     else:
-        bitrix_company_id = company_add_util(company_payload)
+        bitrix_company_id = forward_sync_bitrix.add_company(company_payload)
 
     # Собираем payload для универсальных реквизитов компании
-    company_requisite_payload = build_payload_company_requisite(organization, bitrix_company_id, preset_id)
+    company_requisite_payload = company_utils.build_payload_company_requisite(organization, bitrix_company_id, preset_id)
 
     # Если реквизиты компании в битриксе уже существуют, то обновляем
     if requisite_company_id:
-        res = requisite_update_util(requisite_company_id, company_requisite_payload)
+        res = forward_sync_bitrix.update_requisite(requisite_company_id, company_requisite_payload)
     # Иначе создаем новые
     else:
-        requisite_company_id = requisite_add_util(company_requisite_payload)
+        requisite_company_id = forward_sync_bitrix.add_requisite(company_requisite_payload)
 
     # Собираем payload для банковских реквизитов компании для отправки в битрикс
-    company_bankdetail_requisite_payload = build_payload_company_bankdetail_requisite(organization, requisite_company_id)
+    company_bankdetail_requisite_payload = company_utils.build_payload_company_bankdetail_requisite(organization, requisite_company_id)
     
     # Если банковские реквизиты компании уже существуют, то обновляем
     if bankdetail_requisite_company_id:
-        res = requisite_bankdetail_update_util(bankdetail_requisite_company_id, company_bankdetail_requisite_payload)
+        res = forward_sync_bitrix.update_bankdetail_requisite(bankdetail_requisite_company_id, company_bankdetail_requisite_payload)
     # Иначе создаем новые
     else:
-        bankdetail_requisite_company_id = requisite_bankdetail_add_util(company_bankdetail_requisite_payload)
+        bankdetail_requisite_company_id = forward_sync_bitrix.add_bankdetail_requisite(company_bankdetail_requisite_payload)
 
     # Собираем payload-ы для юридического и фактического адресов компании для отправки в битрикс
-    address_jur_payload, address_fact_payload = build_payload_company_address(organization, requisite_company_id)
+    address_jur_payload, address_fact_payload = company_utils.build_payload_company_address(organization, requisite_company_id)
     
     # Если юридический адрес уже есть, то обновляем
     if has_address_jur_company:
-        res = address_update_util(address_jur_payload)
+        res = forward_sync_bitrix.update_address(address_jur_payload)
     # Иначе создаем
     else:
-        has_address_jur_company = address_add_util(address_jur_payload)
+        has_address_jur_company = forward_sync_bitrix.add_address(address_jur_payload)
 
     # Если фактический адрес уже есть, то обновляем
     if has_address_fact_company:
-        res = address_update_util(address_fact_payload)
+        res = forward_sync_bitrix.update_address(address_fact_payload)
     # Иначе создаем
     else:
-        has_address_fact_company = address_add_util(address_fact_payload)
+        has_address_fact_company = forward_sync_bitrix.add_address(address_fact_payload)
 
     # Обновляем все crm id-шники в БД
-    update_organization_with_crm_ids(id, bitrix_company_id, requisite_company_id, bankdetail_requisite_company_id, has_address_jur_company, has_address_fact_company)
+    query_organization.update_organization_with_crm_ids(id, bitrix_company_id, requisite_company_id, bankdetail_requisite_company_id, has_address_jur_company, has_address_fact_company)
 
     return {
         "organization_id": id,

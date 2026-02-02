@@ -16,7 +16,6 @@ class HouseToObjectKSFields(Enum):
     company_id = "Владельцы"
     id = "ID Домовладения в ОСА"
 
-
 class HouseToGasificationStageFields(Enum):
     # Этапы газификации
     date_project_agreement = "Согласовано"
@@ -52,7 +51,6 @@ class PersonToContactFields(Enum):
     patronimic_name = "SECOND_NAME"
     snils = "СНИЛС"
 
-
 class PersonToContactRequisite(Enum):
     family_name = "RQ_LAST_NAME"
     name = "RQ_FIRST_NAME"
@@ -67,7 +65,6 @@ class PersonToContactRequisite(Enum):
     ogrn = "RQ_OGRN"
     email = "RQ_EMAIL"
 
-
 class PersonToAddress(Enum):
     reg_adress = "ADDRESS_1"
     reg_region = "PROVINCE"
@@ -77,3 +74,26 @@ class PersonToAddress(Enum):
     reg_house = ""
     reg_flat = ""
     postal_index = "POSTAL_CODE"
+
+class OrganizationToCompanyFields(Enum):
+    name = "TITLE"
+    is_pir = "ПИР"
+    is_smr_gvd_gnd = "СМР"
+    is_to_gvd_gnd = "ГПО" # Точно ли так?
+
+class OrganizationToAddress(Enum):
+    adress_jur = "ADDRESS_1"
+    zip_code_jur = "POSTAL_CODE"
+    adress_fact = "ADDRESS_1"
+    zip_code_fact = "POSTAL_CODE"
+
+class OrganizationToCompanyRequisite(Enum):
+    inn = "RQ_INN"
+    kpp = "RQ_KPP"
+    ogrn = "RQ_OGRN"
+
+class OrganizationToCompanyBankdetailRequisite(Enum):
+    bik = "RQ_BIK"
+    korr_acc = "RQ_COR_ACC_NUM"
+    calc_acc = "RQ_ACC_NUM"
+    bank = "RQ_BANK_NAME"
