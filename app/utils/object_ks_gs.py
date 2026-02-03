@@ -24,7 +24,7 @@ def build_payloads_object_ks_gs(house):
 
     for key, value in house.items():
         if key in ("postal_index", "town", "street", "house_number", "corpus_number", "flat_number",
-        "object_ks_crm_id", "gasification_stage_crm_id"):
+        "object_ks_crm_id", "gasification_stage_crm_id", "id_net"):
             continue
 
         if key in ("is_to_from_sibgs", "is_double_adress", "is_ods"):
@@ -40,7 +40,7 @@ def build_payloads_object_ks_gs(house):
             object_ks_payload[field["field_name_unified"]] = field["iblock_element_id"]
             continue
 
-        if key in ('id', "cadastr_number", "cadastr_number_oks"):
+        if key in ('id', 'ground_crm_id', "cadastr_number", "cadastr_number_oks"):
             field_ru_label = field_mapper.HouseToObjectKSFields[key].value
             field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.OBJECT_KS_ENTITY_ID)
             object_ks_payload[field["field_name_unified"]] = value

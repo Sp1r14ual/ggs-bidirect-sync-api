@@ -28,9 +28,12 @@ router = APIRouter(prefix="/forward_sync", tags=["forward_sync"])
 def forward_sync_house_endpoint(id: int, contract_crm_id: Optional[int] = None) -> dict:
     '''Эндпоинт для синхронизации битрикс-сущностей Объект КС и Этапы газификации с таблицей house'''
 
-    # Получаем house и house_owner из БД
+    # Получаем house, house_owner, net из БД
     house = query_house.query_house_by_id(id)
     house_owner = query_house_owner.query_house_owner_by_house(id)
+    net = None
+    if house["id_net"]:
+        net = query_net.query_net_by_id(house["id_net"])
 
     #если пустой contact_crm_id, но не пустой id_person, то синхроним его и перезапрашиваем
     if house_owner["id_person"] and not house_owner["contact_crm_id"]:
@@ -41,6 +44,10 @@ def forward_sync_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
     if house_owner["id_organization"] and not house_owner["company_crm_id"]:
         forward_sync_organization_endpoint(house_owner["id_organization"], id)
         house_owner = query_house_owner.query_house_owner_by_house(id)
+
+    if net and not net["ground_crm_id"]:
+        forward_sync_ground_endpoint(net["id"])
+        net = query_net.query_net_by_id(house["id_net"])
 
     house["contact_id"] = house_owner["contact_crm_id"]
     house["company_id"] = house_owner["company_crm_id"]
@@ -77,12 +84,10 @@ def forward_sync_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
 
     # Если gasification_stage_crm_id не null, значит этап газификации в битриксе существует, вызываем процедуру обновления
     if gasification_stage_crm_id:
-        # res = gasification_stage_update_util(gasification_stage_crm_id, gasification_stage_payload)
         res = forward_sync_bitrix.update_item(gasification_stage_crm_id, settings.settings.GASIFICATION_STAGE_TYPE_ID, gasification_stage_payload)
         print(res)
     # Иначе создаем новый этап газификации в битриксе и сохраняем его id
     else:
-        # gasification_stage_crm_id = gasification_stage_add_util(gasification_stage_payload)["id"]
         gasification_stage_crm_id = forward_sync_bitrix.add_item(settings.settings.GASIFICATION_STAGE_TYPE_ID, gasification_stage_payload)["id"]
 
     # Добавляем crm_id в house

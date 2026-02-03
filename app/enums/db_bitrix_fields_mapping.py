@@ -15,6 +15,7 @@ class HouseToObjectKSFields(Enum):
     contact_id = "Владельцы"
     company_id = "Владельцы"
     id = "ID Домовладения в ОСА"
+    ground_crm_id = "Площадка"
 
 class HouseToGasificationStageFields(Enum):
     # Этапы газификации
