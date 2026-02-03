@@ -138,3 +138,14 @@ class ContractToContract(Enum):
     subject = "Предмет договора"
     contract_category_name = "Вид договора"
     crm_category = "Категория"
+
+class NetToGround(Enum):
+    sys_old = "Код"
+    name = "Псевдоним"
+    gro_name = "ГРО"
+    town_name = "Нас.пункт"
+    status_name = "Статус"
+    houses_cnt = "Объектов (число)"
+    consumer_type_name = "Тип потребителя"
+    district_name  = "Район"
+    remark = "Примечание"

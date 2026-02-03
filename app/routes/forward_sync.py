@@ -10,6 +10,7 @@ import app.utils.contact as contact_utils
 import app.utils.company as company_utils
 import app.utils.equip as equip_utils
 import app.utils.contract as contract_utils
+import app.utils.ground as ground_utils
 import app.settings as settings
 import app.db.query_house as query_house
 import app.db.query_house_owner as query_house_owner
@@ -18,6 +19,7 @@ import app.db.query_organization as query_organization
 import app.db.query_equip as query_equip
 import app.db.query_house_equip as query_house_equip
 import app.db.query_contract as query_contract
+import app.db.query_net as query_net
 
 router = APIRouter(prefix="/forward_sync", tags=["forward_sync"])
 
@@ -322,3 +324,38 @@ def forward_sync_contracts_endpoint(contract_id: int):
         "contract_id": contract_id,
         "contract_crm_id": contract_crm_id
     }
+
+@router.post("/ground/{ground_id}")
+def sync_with_db_ground_endpoint(ground_id: int):
+
+    # Достаём площадку из БД по id
+    ground: dict = query_net.query_net_by_id(ground_id)
+    ground_id = ground["id"]
+
+    if not ground:
+        raise HTTPException(status_code=400, detail="Contract not found")
+
+
+    ground_payload = ground_utils.build_payload_ground(ground)
+
+    #Вытаскиваем crm_id
+    ground_crm_id = ground["ground_crm_id"]
+
+    # Проверяем, если contract_crm_id не null в обеих таблицах, то обновляем, иначе создаем новую
+    if ground_crm_id:
+        res = forward_sync_bitrix.update_item(ground_crm_id, settings.settings.GROUND_TYPE_ID, ground_payload)
+    else:
+        ground_crm_id = forward_sync_bitrix.add_item(settings.settings.GROUND_TYPE_ID, ground_payload)["id"]
+
+    # Обновляем таблицу
+    query_net.update_net_with_crm_id(ground_id, ground_crm_id)
+   
+    return {
+        "ground_id": ground_id,
+        "ground_crm_id": ground_crm_id
+    }
+    
+    # return {
+    #     "ground": ground,
+    #     "ground_payload": ground_payload
+    # }
