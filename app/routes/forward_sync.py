@@ -326,7 +326,7 @@ def forward_sync_contracts_endpoint(contract_id: int):
     }
 
 @router.post("/ground/{ground_id}")
-def sync_with_db_ground_endpoint(ground_id: int):
+def forward_sync_ground_endpoint(ground_id: int):
 
     # Достаём площадку из БД по id
     ground: dict = query_net.query_net_by_id(ground_id)
