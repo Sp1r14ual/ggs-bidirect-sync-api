@@ -47,44 +47,61 @@ def get_iblock_info(iblock_id: int):
                          }
                    })
 
-@router.get("/get_enum_field_info/{entity_id}/{field_id}")
-def get_enum_field_info(entity_id: str, field_id: int):
+# @router.get("/get_enum_field_info/{entity_id}/{field_id}")
+# def get_enum_field_info(entity_id: str, field_id: int):
+#     b = Bitrix(settings.BITRIX_WEBHOOK)
+#     field_data = b.call(
+#                  'userfieldconfig.get',
+#                     { 'moduleId': 'crm',
+#                             'entityId': entity_id,
+#                             'id': field_id
+#                             })
+#     return [{'field_id': field_data.get('id'),
+#              'entityId': field_data.get('entityId'),
+#              'fieldName': field_data.get('fieldName'),
+#              'elem_id': x.get('id'),
+#              'elem_value': x.get('value')} for x in field_data['enum']]
+
+@router.get("/get_field_info_by_id/{id}")
+def get_field_info_by_id(id: int):
     b = Bitrix(settings.BITRIX_WEBHOOK)
     field_data = b.call(
                  'userfieldconfig.get',
-                    { 'moduleId': 'crm',
-                            'entityId': entity_id,
-                            'id': field_id
-                            })
-    # return field_data
-    return [{'field_id': field_data.get('id'),
-             'entityId': field_data.get('entityId'),
-             'fieldName': field_data.get('fieldName'),
-             'elem_id': x.get('id'),
-             'elem_value': x.get('value')} for x in field_data['enum']]
+                   { "moduleId": "crm", "id": id}
+    )
 
+    return field_data
 
-@router.get("/get_all_enum_fields")
-def get_all_enum_fields():
+@router.get("/get_all_fields")
+def get_all_fields():
     b = Bitrix(settings.BITRIX_WEBHOOK)
     field_data = b.get_all(
                  'userfieldconfig.list',
-                   { "moduleId": "crm"}
+                   { "moduleId": "crm", "select": ['*']}
     )
 
-    # return field_data
-    return [{'field_id': x['id'], 'entityId': x['entityId'], 'fieldName':  x['fieldName'], 'userTypeId': x['userTypeId']} for x in field_data if x['userTypeId'] == 'enumeration']
+    return field_data
 
-@router.get("/get_all_iblock_element_fields")
-def get_all_iblock_element_fields():
-    b = Bitrix(settings.BITRIX_WEBHOOK)
-    field_data = b.get_all(
-                 'userfieldconfig.list',
-                   { "moduleId": "crm"}
-    )
+# @router.get("/get_all_enum_fields")
+# def get_all_enum_fields():
+#     b = Bitrix(settings.BITRIX_WEBHOOK)
+#     field_data = b.get_all(
+#                  'userfieldconfig.list',
+#                    { "moduleId": "crm"}
+#     )
 
-    # return field_data
-    return [{'field_id': x['id'], 'entityId': x['entityId'], 'fieldName':  x['fieldName'], 'userTypeId': x['userTypeId'], 'iblock_id': x["settings"]["IBLOCK_ID"]} for x in field_data if x['userTypeId'] == 'iblock_element']
+#     return [{'field_id': x['id'], 'entityId': x['entityId'], 'fieldName':  x['fieldName'], 'userTypeId': x['userTypeId']} for x in field_data if x['userTypeId'] == 'enumeration']
+
+# @router.get("/get_all_iblock_element_fields")
+# def get_all_iblock_element_fields():
+#     b = Bitrix(settings.BITRIX_WEBHOOK)
+#     field_data = b.get_all(
+#                  'userfieldconfig.list',
+#                    { "moduleId": "crm"}
+#     )
+
+#     # return field_data
+#     return [{'field_id': x['id'], 'entityId': x['entityId'], 'fieldName':  x['fieldName'], 'userTypeId': x['userTypeId'], 'iblock_id': x["settings"]["IBLOCK_ID"]} for x in field_data if x['userTypeId'] == 'iblock_element']
 
 def unify_field_name(s: str) -> str:
     if not s:
@@ -115,50 +132,77 @@ def sync_crm_fields_with_db():
 
     create_crm_fields_table()
 
-    enum_fields: list = get_all_enum_fields()
-    iblock_element_fields: list = get_all_iblock_element_fields()
+    all_fields = get_all_fields()
+
+    
 
     #Обработка enum-ов
-    for field in enum_fields:
-        field_id: int = field.get("field_id")
-        user_type_id: str = field.get("userTypeId")
-        entity_id: str = field.get("entityId")
-        field_name: str = field.get("fieldName")
-        enum_field_info: list = get_enum_field_info(entity_id=entity_id, field_id=field_id)
-        for info in enum_field_info:
-            crm_field = CrmFields(
-                field_id=info.get("field_id"),
-                user_type_id=user_type_id,
-                entity_id=info.get("entityId"),
-                field_name=info.get("fieldName"),
-                field_name_unified = unify_field_name(info.get("fieldName")),
-                elem_id=info.get("elem_id"),
-                elem_value=info.get("elem_value")
-            )
-            crm_field.is_prod = 0 if settings.RUN_MODE == "DEV" else 1
-            rows.append(crm_field)
+    try:
+        for field in all_fields:
+            field_id: int = field.get("id")
+            user_type_id: str = field.get("userTypeId")
+            entity_id: str = field.get("entityId")
+            field_name: str = field.get("fieldName")
 
-    for iblock_field in iblock_element_fields:
-        field_id: int = iblock_field.get("field_id")
-        user_type_id: str = iblock_field.get("userTypeId")
-        entity_id: str = iblock_field.get("entityId")
-        field_name: str = iblock_field.get("fieldName")
-        iblock_id: int = iblock_field.get("iblock_id")
-        iblock_element_field_info: list = get_iblock_info(iblock_id=iblock_id)
+            # Если у поля тип enum
+            if user_type_id == "enumeration":
+                general_field_info: dict = get_field_info_by_id(id=field_id)
+                for enum_info in general_field_info.get("enum", []):
+                    crm_field = CrmFields(
+                        field_id=field_id,
+                        user_type_id=user_type_id,
+                        entity_id=entity_id,
+                        field_label_ru=general_field_info.get("editFormLabel").get("ru"),
+                        field_label_en=general_field_info.get("editFormLabel").get("en"),
+                        field_name=field_name,
+                        field_name_unified = unify_field_name(field_name),
+                        enum_element_id=enum_info.get("id"),
+                        enum_element_value=enum_info.get("value")
+                    )
+                    crm_field.is_prod = 0 if settings.RUN_MODE == "DEV" else 1
+                    rows.append(crm_field)
+            
+            # Если у поля тип инфоблок
+            elif user_type_id == "iblock_element":
+                iblock_id: int = field["settings"].get("IBLOCK_ID")
+                iblock_element_field_info: list = get_iblock_info(iblock_id=iblock_id)
+                general_field_info: dict = get_field_info_by_id(id=field_id)
 
-        for iblock_info in iblock_element_field_info:
-            crm_field = CrmFields(
-                field_id=field_id,
-                user_type_id=user_type_id,
-                entity_id=entity_id,
-                iblock_id=iblock_info.get("IBLOCK_ID"),
-                field_name=field_name,
-                field_name_unified=unify_field_name(field_name),
-                elem_id=iblock_info.get("ID"),
-                elem_value=iblock_info.get("NAME")
-            )
-            crm_field.is_prod = 0 if settings.RUN_MODE == "DEV" else 1
-            rows.append(crm_field)
+                for iblock_info in iblock_element_field_info:
+                    crm_field = CrmFields(
+                        field_id=field_id,
+                        user_type_id=user_type_id,
+                        entity_id=entity_id,
+                        iblock_id=iblock_info.get("IBLOCK_ID"),
+                        field_label_ru=general_field_info.get("editFormLabel").get("ru"),
+                        field_label_en=general_field_info.get("editFormLabel").get("en"),
+                        field_name=field_name,
+                        field_name_unified=unify_field_name(field_name),
+                        iblock_element_id=iblock_info.get("ID"),
+                        iblock_element_value=iblock_info.get("NAME")
+                    )
+                    crm_field.is_prod = 0 if settings.RUN_MODE == "DEV" else 1
+                    rows.append(crm_field)
+
+            else:
+                general_field_info: dict = get_field_info_by_id(id=field_id)
+                crm_field = CrmFields(
+                        field_id=field_id,
+                        user_type_id=user_type_id,
+                        entity_id=entity_id,
+                        field_label_ru=general_field_info.get("editFormLabel").get("ru"),
+                        field_label_en=general_field_info.get("editFormLabel").get("en"),
+                        field_name=field_name,
+                        field_name_unified=unify_field_name(field_name)
+                    )
+                crm_field.is_prod = 0 if settings.RUN_MODE == "DEV" else 1
+                rows.append(crm_field)
+    
+    except Exception as e:
+        return {
+            "field": general_field_info,
+            "err": str(e)
+        }
     
 
     fill_info_crm_fields_table(rows)
