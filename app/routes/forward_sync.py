@@ -23,17 +23,21 @@ import app.db.query_net as query_net
 
 router = APIRouter(prefix="/forward_sync", tags=["forward_sync"])
 
-# @router.post("/house/{id}/contract_id/{contract_crm_id}")
 @router.post("/house/{id}")
-def forward_sync_house_endpoint(id: int, contract_crm_id: Optional[int] = None) -> dict:
+def forward_sync_house_endpoint(id: int) -> dict:
     '''Эндпоинт для синхронизации битрикс-сущностей Объект КС и Этапы газификации с таблицей house'''
 
     # Получаем house, house_owner, net из БД
     house = query_house.query_house_by_id(id)
     house_owner = query_house_owner.query_house_owner_by_house(id)
+
     net = None
     if house["id_net"]:
         net = query_net.query_net_by_id(house["id_net"])
+
+    contract = None
+    if house["contract_id"]:
+        contract = query_contract.query_contract_by_id(house["contract_id"])
 
     #если пустой contact_crm_id, но не пустой id_person, то синхроним его и перезапрашиваем
     if house_owner["id_person"] and not house_owner["contact_crm_id"]:
@@ -45,9 +49,14 @@ def forward_sync_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
         forward_sync_organization_endpoint(house_owner["id_organization"], id)
         house_owner = query_house_owner.query_house_owner_by_house(id)
 
+    # Если площадка существует, но при этом она не синхронизирована с crm, то синхроним
     if net and not net["ground_crm_id"]:
         forward_sync_ground_endpoint(net["id"])
         net = query_net.query_net_by_id(house["id_net"])
+
+    if contract and not contract["contract_crm_id"]:
+        forward_sync_contract_endpoint(contract["id"])
+        contract = query_contract.query_contract_by_id(house["contract_id"])
 
     house["contact_id"] = house_owner["contact_crm_id"]
     house["company_id"] = house_owner["company_crm_id"]
@@ -62,9 +71,9 @@ def forward_sync_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
     # Собираем payload для Объекта КС и Этапа газификации, который будет отправлен в битрикс
     object_ks_payload, gasification_stage_payload = object_ks_gs_utils.build_payloads_object_ks_gs(house)
 
-    # !!! доставать id договора из БД 
-    if contract_crm_id:
-        object_ks_payload["parentId1078"] = contract_crm_id
+    # Добавляем id договора в payload перед отправкой
+    if contract["contract_crm_id"]:
+        object_ks_payload["parentId1078"] = contract["contract_crm_id"]
 
     # return {
     #     "object_ks_payload": object_ks_payload,
@@ -79,7 +88,7 @@ def forward_sync_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
     else:
         object_ks_crm_id = forward_sync_bitrix.add_item(settings.settings.OBJECT_KS_TYPE_ID, object_ks_payload)["id"]
 
-    # Сохраняем id Объекта КС в payload этапа газификации к битриксу
+    # Добавляем id Объекта КС в payload этапа газификации перед отправкой
     gasification_stage_payload["parentId1066"] = object_ks_crm_id
 
     # Если gasification_stage_crm_id не null, значит этап газификации в битриксе существует, вызываем процедуру обновления
@@ -278,7 +287,7 @@ def forward_sync_equip_endpoint(equip_id: int, house_equip_id: int):
     }
 
 @router.post("/contract/{contract_id}")
-def forward_sync_contracts_endpoint(contract_id: int):
+def forward_sync_contract_endpoint(contract_id: int):
     # Достаём оборудование из БД по id
     contract: dict = query_contract.query_contract_by_id(contract_id)
 

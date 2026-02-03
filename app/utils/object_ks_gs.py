@@ -24,7 +24,7 @@ def build_payloads_object_ks_gs(house):
 
     for key, value in house.items():
         if key in ("postal_index", "town", "street", "house_number", "corpus_number", "flat_number",
-        "object_ks_crm_id", "gasification_stage_crm_id", "id_net"):
+        "object_ks_crm_id", "gasification_stage_crm_id", "id_net", "contract_id", "contract_crm_id"):
             continue
 
         if key in ("is_to_from_sibgs", "is_double_adress", "is_ods"):
