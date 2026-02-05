@@ -71,8 +71,10 @@ def build_payloads_object_ks_gs(house):
 
         if key in ('contact_id', 'company_id'):
             if key == "contact_id":
+                object_ks_payload["contactId"] = value
                 gasification_stage_payload["contactId"] = value
             else:
+                object_ks_payload["companyId"] = value
                 gasification_stage_payload["companyId"] = value
             continue
 
