@@ -49,6 +49,7 @@ def query_person_by_id(id: int):
         .join(TypeContract, TypeContract.id_person == Person.id, isouter=True)
         .join(Contract, Contract.id_type_contract == TypeContract.id, isouter=True)
         .where(Person.id == id))
+        
         result = db.execute(query).first()
 
         if not result:

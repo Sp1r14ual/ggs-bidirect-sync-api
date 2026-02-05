@@ -49,7 +49,7 @@ def forward_sync_house_endpoint(id: int, **parents: Optional[dict]) -> dict:
         house_owner = query_house_owner.query_house_owner_by_house(id)
 
     # если пустой company_crm_id, но не пустой id_organization, то синхроним его
-    if house_owner and house_owner.get("id_organization") and not house_owner("company_crm_id") and not parents.get("organization_id"):
+    if house_owner and house_owner.get("id_organization") and not house_owner.get("company_crm_id") and not parents.get("organization_id"):
         forward_sync_organization_endpoint(house_owner["id_organization"], house_id=id)
         house_owner = query_house_owner.query_house_owner_by_house(id)
 
@@ -113,7 +113,6 @@ def forward_sync_house_endpoint(id: int, **parents: Optional[dict]) -> dict:
         "gasification_stage_crm_id": gasification_stage_crm_id
     }
 
-# @router.post("/person/{id}/objectks/{object_ks_id}")
 @router.post("/person/{id}")
 def forward_sync_person_endpoint(id: int, **parents: Optional[dict]) -> dict:
     '''Эндпоинт для синхронизации битрикс-контактов с таблицей person'''
@@ -195,15 +194,30 @@ def forward_sync_person_endpoint(id: int, **parents: Optional[dict]) -> dict:
         "has_crm_address": has_crm_address
     }
 
-# @router.post("/organization/{id}/objectks/{object_ks_id}")
 @router.post("/organization/{id}")
-def forward_sync_organization_endpoint(id: int, **parents):
+def forward_sync_organization_endpoint(id: int, **parents: Optional[dict]) -> dict:
 
     # Достаём организацию из БД по id
     organization: dict = query_organization.query_organization_by_id(id)
+    house: dict | None = None
+    contract: dict | None = None
 
     if not organization:
-        raise HTTPException(status_code=400, detail="Organization not found") 
+        raise HTTPException(status_code=400, detail="Organization not found")
+
+    if organization.get("house_id"):
+        house = query_house.query_house_by_id(organization["house_id"])
+    
+    if organization.get("contract_id"):
+        contract = query_contract.query_contract_by_id(organization["contract_id"])
+
+    if house and house.get("id") and not house.get("object_ks_crm_id") and not parents.get("house_id"):
+        forward_sync_house_endpoint(house["id"], organization_id=id)
+        house = query_house.query_house_by_id(organization["house_id"])
+    
+    if contract and contract.get("id") and not contract.get("contract_crm_id") and not parents.get("contract_id"):
+        forward_sync_contract_endpoint(contract["id"], organization_id=id)
+        contract = query_contract.query_contract_by_id(organization["contract_id"])
 
     # Достаём id-шники из organization
     bitrix_company_id: int = organization["company_crm_id"]
@@ -215,10 +229,12 @@ def forward_sync_organization_endpoint(id: int, **parents):
     # Собираем payload компании для отправки в битрикс
     company_payload, preset_id = company_utils.build_payload_company(organization)
 
-    # !!! Доставать из БД
-    if object_ks_id:
-        company_payload["parentId1066"] = object_ks_id
+    if organization.get("object_ks_crm_id"):
+        company_payload["PARENT_ID_1066"] = house["object_ks_crm_id"]
 
+    if organization.get("contract_crm_id"):
+        company_payload["PARENT_ID_1078"] = contract["contract_crm_id"]
+    
     # Если компания в битриксе уже существует, то обновляем
     if bitrix_company_id:
         res = forward_sync_bitrix.update_company(bitrix_company_id, company_payload)
