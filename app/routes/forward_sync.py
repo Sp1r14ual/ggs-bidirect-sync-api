@@ -100,6 +100,9 @@ def forward_sync_house_endpoint(id: int, called_by_house: Optional[bool] = False
     if contract.get("contract_crm_id"):
         object_ks_payload[f"parentId{settings.settings.CONTRACT_TYPE_ID}"] = contract["contract_crm_id"]
 
+    if contract.get("ground_crm_id"):
+        object_ks_payload[f"parentId{settings.settings.GROUND_TYPE_ID}"] = contract["ground_crm_id"]
+
     # Для дебага
     # return {
     #     "house": house,
