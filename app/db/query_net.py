@@ -7,6 +7,8 @@ from app.models.zm_gro import Gro
 from app.models.net import Net
 from app.models.type_net_consumer import TypeNetConsumer
 from app.models.type_net_status import TypeNetStatus
+from app.models.house import House
+from app.models.contract import Contract
 
 
 from app.db.engine import engine
@@ -15,31 +17,37 @@ from app.db.engine import engine
 def query_net_by_id(id: int):
     with Session(autoflush=False, bind=engine) as db:
 
-        g = aliased(Gro, name='g')
-        t = aliased(Town, name='t')
-        tns = aliased(TypeNetStatus, name='tns')
-        tnc = aliased(TypeNetConsumer, name='tnc')
-        d = aliased(District, name='d')
-
         query = select(
             Net.id,
             Net.sys_old,
             Net.name,
-            g.name.label('gro_name'),  # Используем label для алиасов в результате
-            t.name.label('town_name'),
-            tns.name.label('status_name'),
+            Gro.name.label('gro_name'),  # Используем label для алиасов в результате
+            Town.name.label('town_name'),
+            TypeNetStatus.name.label('status_name'),
             Net.houses_cnt,
-            tnc.name.label('consumer_type_name'),
-            d.name.label('district_name'),
+            TypeNetConsumer.name.label('consumer_type_name'),
+            District.name.label('district_name'),
             Net.remark,
-            Net.ground_crm_id
-        ).select_from(Net)\
-        .outerjoin(g, Net.crm_id_gro == g.id)\
-        .outerjoin(t, Net.id_town == t.id)\
-        .outerjoin(tns, Net.id_type_net_status == tns.id)\
-        .outerjoin(tnc, Net.id_type_net_consumer == tnc.id)\
-        .outerjoin(d, Net.crm_id_district == d.id)\
-        .where(Net.id == id)
+            Net.ground_crm_id,
+            House.id.label("house_id"),
+            House.object_ks_crm_id,
+            Contract.id.label("contract_id"),
+            Contract.contract_crm_id
+        ).select_from(Net).outerjoin(
+            Gro, Net.crm_id_gro == Gro.id
+        ).outerjoin(
+            Town, Net.id_town == Town.id
+        ).outerjoin(
+            TypeNetStatus, Net.id_type_net_status == TypeNetStatus.id
+        ).outerjoin(
+            TypeNetConsumer, Net.id_type_net_consumer == TypeNetConsumer.id
+        ).outerjoin(
+            District, Net.crm_id_district == District.id
+        ).outerjoin(
+            House, House.id_net == Net.id
+        ).outerjoin(
+            Contract, Contract.id_net == Net.id
+        ).where(Net.id == id)
 
         # Выполнение запроса
         result = db.execute(query).first()

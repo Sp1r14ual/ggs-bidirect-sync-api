@@ -10,6 +10,7 @@ from app.models.type_contract_person_category import TypeContractPersonCategory
 from app.models.organization import Organization
 from app.models.person import Person
 from app.models.house import House
+from app.models.net import Net
 
 
 def query_contract_by_id(id: int):
@@ -34,6 +35,8 @@ def query_contract_by_id(id: int):
             Person2.contact_crm_id.label('id_person2'),
             Contract.id_house,
             House.object_ks_crm_id,
+            Contract.id_net,
+            Net.ground_crm_id,
             TypeContract.id_person,
             TypeContract.id_organization,
             Person.contact_crm_id,
@@ -77,6 +80,8 @@ def query_contract_by_id(id: int):
             TypeContractStatus, Contract.id_type_contract_status == TypeContractStatus.id
         ).outerjoin(
             ContractCategory, TypeContract.id_contract_category == ContractCategory.id
+        ).outerjoin(
+            Net, House.id_net == Net.id
         ).where(
             Contract.id == id
         )

@@ -23,31 +23,72 @@ import app.db.query_net as query_net
 
 router = APIRouter(prefix="/forward_sync", tags=["forward_sync"])
 
-# @router.post("/house/{id}/contract_id/{contract_crm_id}")
 @router.post("/house/{id}")
-def forward_sync_house_endpoint(id: int, contract_crm_id: Optional[int] = None) -> dict:
+def forward_sync_house_endpoint(id: int, called_by_house: Optional[bool] = False, called_by_person: Optional[bool] = False, called_by_organization: Optional[bool] = False, called_by_net: Optional[bool] = False, called_by_contract: Optional[bool] = False) -> dict:
     '''Эндпоинт для синхронизации битрикс-сущностей Объект КС и Этапы газификации с таблицей house'''
 
-    # Получаем house и house_owner из БД
+    # Получаем house, house_owner, net из БД
     house = query_house.query_house_by_id(id)
     house_owner = query_house_owner.query_house_owner_by_house(id)
-
-    #если пустой contact_crm_id, но не пустой id_person, то синхроним его и перезапрашиваем
-    if house_owner["id_person"] and not house_owner["contact_crm_id"]:
-        forward_sync_person_endpoint(house_owner["id_person"], id)
-        house_owner = query_house_owner.query_house_owner_by_house(id)
-
-    # если пустой company_crm_id, но не пустой id_organization, то синхроним его
-    if house_owner["id_organization"] and not house_owner["company_crm_id"]:
-        forward_sync_organization_endpoint(house_owner["id_organization"], id)
-        house_owner = query_house_owner.query_house_owner_by_house(id)
-
-    house["contact_id"] = house_owner["contact_crm_id"]
-    house["company_id"] = house_owner["company_crm_id"]
 
     # Возвращаем ошибку, если house пустой
     if not house:
         raise HTTPException(status_code=400, detail="House not found")
+
+    net = None
+    if house.get("id_net"):
+        net = query_net.query_net_by_id(house["id_net"])
+
+    contract = None
+    if house.get("contract_id"):
+        contract = query_contract.query_contract_by_id(house["contract_id"])
+
+    #если пустой contact_crm_id, но не пустой id_person, то синхроним его и перезапрашиваем
+    if house_owner and house_owner.get("id_person") and not house_owner.get("contact_crm_id") and not called_by_person:
+        forward_sync_person_endpoint(house_owner["id_person"], **{
+            "called_by_person": called_by_person,
+            "called_by_organization": called_by_organization,
+            "called_by_house": True,
+            "called_by_contract": called_by_contract,
+            "called_by_net": called_by_net,
+        })
+        house_owner = query_house_owner.query_house_owner_by_house(id)
+
+    # если пустой company_crm_id, но не пустой id_organization, то синхроним его
+    if house_owner and house_owner.get("id_organization") and not house_owner.get("company_crm_id") and not called_by_organization:
+        forward_sync_organization_endpoint(house_owner["id_organization"], **{
+            "called_by_person": called_by_person,
+            "called_by_organization": called_by_organization,
+            "called_by_house": True,
+            "called_by_contract": called_by_contract,
+            "called_by_net": called_by_net,
+        })
+        house_owner = query_house_owner.query_house_owner_by_house(id)
+
+    # Если площадка существует, но при этом она не синхронизирована с crm, то синхроним
+    if net and not net.get("ground_crm_id") and not called_by_net:
+        forward_sync_ground_endpoint(net["id"], **{
+            "called_by_person": called_by_person,
+            "called_by_organization": called_by_organization,
+            "called_by_house": True,
+            "called_by_contract": called_by_contract,
+            "called_by_net": called_by_net,
+        })
+        net = query_net.query_net_by_id(house["id_net"])
+
+    if contract and not contract.get("contract_crm_id") and not called_by_contract:
+        forward_sync_contract_endpoint(contract["id"], **{
+            "called_by_person": called_by_person,
+            "called_by_organization": called_by_organization,
+            "called_by_house": True,
+            "called_by_contract": called_by_contract,
+            "called_by_net": called_by_net,
+        })
+        contract = query_contract.query_contract_by_id(house["contract_id"])
+    
+    if house_owner:
+        house["company_id"] = house_owner.get("company_crm_id")
+        house["contact_id"] = house_owner.get("contact_crm_id")
 
     # Получаем из house id объекта КС и этапа газификации в битриксе
     object_ks_crm_id, gasification_stage_crm_id = house["object_ks_crm_id"], house["gasification_stage_crm_id"]
@@ -55,11 +96,17 @@ def forward_sync_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
     # Собираем payload для Объекта КС и Этапа газификации, который будет отправлен в битрикс
     object_ks_payload, gasification_stage_payload = object_ks_gs_utils.build_payloads_object_ks_gs(house)
 
-    # !!! доставать id договора из БД 
-    if contract_crm_id:
-        object_ks_payload["parentId1078"] = contract_crm_id
+    # Добавляем id договора в payload перед отправкой
+    if contract.get("contract_crm_id"):
+        object_ks_payload[f"parentId{settings.settings.CONTRACT_TYPE_ID}"] = contract["contract_crm_id"]
 
+    if contract.get("ground_crm_id"):
+        object_ks_payload[f"parentId{settings.settings.GROUND_TYPE_ID}"] = contract["ground_crm_id"]
+
+    # Для дебага
     # return {
+    #     "house": house,
+    #     "house_owner": house_owner,
     #     "object_ks_payload": object_ks_payload,
     #     "gasification_stage_payload": gasification_stage_payload
     # }
@@ -72,17 +119,15 @@ def forward_sync_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
     else:
         object_ks_crm_id = forward_sync_bitrix.add_item(settings.settings.OBJECT_KS_TYPE_ID, object_ks_payload)["id"]
 
-    # Сохраняем id Объекта КС в payload этапа газификации к битриксу
-    gasification_stage_payload["parentId1066"] = object_ks_crm_id
+    # Добавляем id Объекта КС в payload этапа газификации перед отправкой
+    gasification_stage_payload[f"parentId{settings.settings.OBJECT_KS_TYPE_ID}"] = object_ks_crm_id
 
     # Если gasification_stage_crm_id не null, значит этап газификации в битриксе существует, вызываем процедуру обновления
     if gasification_stage_crm_id:
-        # res = gasification_stage_update_util(gasification_stage_crm_id, gasification_stage_payload)
         res = forward_sync_bitrix.update_item(gasification_stage_crm_id, settings.settings.GASIFICATION_STAGE_TYPE_ID, gasification_stage_payload)
         print(res)
     # Иначе создаем новый этап газификации в битриксе и сохраняем его id
     else:
-        # gasification_stage_crm_id = gasification_stage_add_util(gasification_stage_payload)["id"]
         gasification_stage_crm_id = forward_sync_bitrix.add_item(settings.settings.GASIFICATION_STAGE_TYPE_ID, gasification_stage_payload)["id"]
 
     # Добавляем crm_id в house
@@ -95,16 +140,43 @@ def forward_sync_house_endpoint(id: int, contract_crm_id: Optional[int] = None) 
         "gasification_stage_crm_id": gasification_stage_crm_id
     }
 
-# @router.post("/person/{id}/objectks/{object_ks_id}")
 @router.post("/person/{id}")
-def forward_sync_person_endpoint(id: int, object_ks_id: Optional[int] = None) -> dict:
+def forward_sync_person_endpoint(id: int, called_by_person: Optional[bool] = False, called_by_organization: Optional[bool] = False, called_by_house: Optional[bool] = False, called_by_contract: Optional[bool] = False, called_by_net: Optional[bool] = False) -> dict:
     '''Эндпоинт для синхронизации битрикс-контактов с таблицей person'''
 
     # Достаем person из БД по id
-    person: dict = query_person.query_person_by_id(id)
+    person: dict | None = query_person.query_person_by_id(id)
+    house: dict | None = None
+    contract: dict | None = None
 
     if not person:
         raise HTTPException(status_code=400, detail="Person not found")
+
+    if person.get("house_id"):
+        house = query_house.query_house_by_id(person["house_id"])
+    
+    if person.get("contract_id"):
+        contract = query_contract.query_contract_by_id(person["contract_id"])
+
+    if house and house.get("id") and not house.get("object_ks_crm_id") and not called_by_house:
+        forward_sync_house_endpoint(house["id"], **{
+            "called_by_person": True,
+            "called_by_organization": called_by_organization,
+            "called_by_house": called_by_house,
+            "called_by_contract": called_by_contract,
+            "called_by_net": called_by_net,
+        })
+        house = query_house.query_house_by_id(person["house_id"])
+    
+    if contract and contract.get("id") and not contract.get("contract_crm_id") and not called_by_contract:
+        forward_sync_contract_endpoint(contract["id"], **{
+            "called_by_person": True,
+            "called_by_organization": called_by_organization,
+            "called_by_house": called_by_house,
+            "called_by_contract": called_by_contract,
+            "called_by_net": called_by_net,
+        })
+        contract = query_contract.query_contract_by_id(person["contract_id"])
 
     # Достаем crm id контакта, его реквизиты и наличие адреса
     bitrix_contact_id: int = person["contact_crm_id"]
@@ -114,9 +186,15 @@ def forward_sync_person_endpoint(id: int, object_ks_id: Optional[int] = None) ->
     #Собираем payload для создания/обновления битрикс-контакта
     contact_payload = contact_utils.build_payload_contact(person)
 
-    # !!! Сделать получение id домовладения из БД
-    if object_ks_id:
-        contact_payload["parentId1066"] = object_ks_id
+    if person.get("object_ks_crm_id"):
+        contact_payload[f"PARENT_ID_{settings.settings.OBJECT_KS_TYPE_ID}"] = house["object_ks_crm_id"]
+
+    if person.get("contract_crm_id"):
+        contact_payload[f"PARENT_ID_{settings.settings.CONTRACT_TYPE_ID}"] = contract["contract_crm_id"]
+
+    # return {
+    #     "contact_payload": contact_payload
+    # }
 
     # Если контакт уже существует в битрикс, то запускаем процедуру обновления
     if bitrix_contact_id:
@@ -155,15 +233,42 @@ def forward_sync_person_endpoint(id: int, object_ks_id: Optional[int] = None) ->
         "has_crm_address": has_crm_address
     }
 
-# @router.post("/organization/{id}/objectks/{object_ks_id}")
 @router.post("/organization/{id}")
-def forward_sync_organization_endpoint(id: int, object_ks_id: Optional[int] = None):
+def forward_sync_organization_endpoint(id: int, called_by_person: Optional[bool] = False, called_by_organization: Optional[bool] = False, called_by_house: Optional[bool] = False, called_by_contract: Optional[bool] = False, called_by_net: Optional[bool] = False) -> dict:
 
     # Достаём организацию из БД по id
     organization: dict = query_organization.query_organization_by_id(id)
+    house: dict | None = None
+    contract: dict | None = None
 
     if not organization:
-        raise HTTPException(status_code=400, detail="Organization not found") 
+        raise HTTPException(status_code=400, detail="Organization not found")
+
+    if organization.get("house_id"):
+        house = query_house.query_house_by_id(organization["house_id"])
+    
+    if organization.get("contract_id"):
+        contract = query_contract.query_contract_by_id(organization["contract_id"])
+
+    if house and house.get("id") and not house.get("object_ks_crm_id") and not called_by_house:
+        forward_sync_house_endpoint(house["id"], **{
+            "called_by_person": called_by_person,
+            "called_by_organization": True,
+            "called_by_house": called_by_house,
+            "called_by_contract": called_by_contract,
+            "called_by_net": called_by_net,
+        })
+        house = query_house.query_house_by_id(organization["house_id"])
+    
+    if contract and contract.get("id") and not contract.get("contract_crm_id") and not called_by_contract:
+        forward_sync_contract_endpoint(contract["id"], **{
+            "called_by_person": called_by_person,
+            "called_by_organization": True,
+            "called_by_house": called_by_house,
+            "called_by_contract": called_by_contract,
+            "called_by_net": called_by_net,
+        })
+        contract = query_contract.query_contract_by_id(organization["contract_id"])
 
     # Достаём id-шники из organization
     bitrix_company_id: int = organization["company_crm_id"]
@@ -175,10 +280,12 @@ def forward_sync_organization_endpoint(id: int, object_ks_id: Optional[int] = No
     # Собираем payload компании для отправки в битрикс
     company_payload, preset_id = company_utils.build_payload_company(organization)
 
-    # !!! Доставать из БД
-    if object_ks_id:
-        company_payload["parentId1066"] = object_ks_id
+    if organization.get("object_ks_crm_id"):
+        company_payload[f"PARENT_ID_{settings.settings.OBJECT_KS_TYPE_ID}"] = house["object_ks_crm_id"]
 
+    if organization.get("contract_crm_id"):
+        company_payload[f"PARENT_ID_{settings.settings.CONTRACT_TYPE_ID}"] = contract["contract_crm_id"]
+    
     # Если компания в битриксе уже существует, то обновляем
     if bitrix_company_id:
         res = forward_sync_bitrix.update_company(bitrix_company_id, company_payload)
@@ -236,7 +343,7 @@ def forward_sync_organization_endpoint(id: int, object_ks_id: Optional[int] = No
     }
 
 @router.post("/equip/{equip_id}/house_equip/{house_equip_id}")
-def forward_sync_equip_endpoint(equip_id: int, house_equip_id: int):
+def forward_sync_equip_endpoint(equip_id: int, house_equip_id: int, **parents):
     # Достаём оборудование из БД по id
     equip: dict = query_equip.query_equip_by_id(equip_id)
     house_equip: dict = query_house_equip.query_house_equip_by_id(house_equip_id)
@@ -272,71 +379,134 @@ def forward_sync_equip_endpoint(equip_id: int, house_equip_id: int):
         "equip_crm_id": equip_crm_id
     }
 
-@router.post("/contract/{contract_id}")
-def forward_sync_contracts_endpoint(contract_id: int):
+@router.post("/contract/{id}")
+def forward_sync_contract_endpoint(id: int, called_by_house: Optional[bool] = False, called_by_person: Optional[bool] = False, called_by_organization: Optional[bool] = False, called_by_contract: Optional[bool] = False, called_by_net: Optional[bool] = False):
     # Достаём оборудование из БД по id
-    contract: dict = query_contract.query_contract_by_id(contract_id)
+    contract: dict = query_contract.query_contract_by_id(id)
 
     if not contract:
         raise HTTPException(status_code=400, detail="Contract not found")
 
     # если пустой contact_crm_id но не пустой id_person, то синхроним его и перезапрашиваем
-    if contract["id_person"] and not contract["contact_crm_id"]:
-        forward_sync_person_endpoint(contract["id_person"], contract["object_ks_crm_id"])
-        contract = query_contract.query_contract_by_id(contract_id)
+    if contract and contract.get("id_person") and not contract.get("contact_crm_id") and not called_by_person:
+        forward_sync_person_endpoint(contract["id_person"], **{
+            "called_by_person": called_by_person,
+            "called_by_organization": called_by_organization,
+            "called_by_house": called_by_house,
+            "called_by_contract": True,
+            "called_by_net": called_by_net,
+        })
+        contract = query_contract.query_contract_by_id(id)
         
     # если пустой company_crm_id но не пустой id_organization, то синхроним его
-    if contract["id_organization"] and not contract["company_crm_id"]:
-        forward_sync_organization_endpoint(contract["id_organization"], contract["object_ks_crm_id"])
-        contract = query_contract.query_contract_by_id(contract_id)
+    if contract and contract.get("id_organization") and not contract.get("company_crm_id") and not called_by_organization:
+        forward_sync_organization_endpoint(contract["id_organization"], **{
+            "called_by_person": called_by_person,
+            "called_by_organization": called_by_organization,
+            "called_by_house": called_by_house,
+            "called_by_contract": True,
+            "called_by_net": called_by_net,
+        })
+        contract = query_contract.query_contract_by_id(id)
 
-    if contract["id_house"] and not contract["object_ks_crm_id"]:
-        forward_sync_house_endpoint(contract["id_house"])
-        contract = query_contract.query_contract_by_id(contract_id)
+    if contract and contract.get("id_house") and not contract.get("object_ks_crm_id") and not called_by_house:
+        forward_sync_house_endpoint(contract["id_house"], **{
+            "called_by_person": called_by_person,
+            "called_by_organization": called_by_organization,
+            "called_by_house": called_by_house,
+            "called_by_contract": True,
+            "called_by_net": called_by_net,
+        })
+        contract = query_contract.query_contract_by_id(id)
+
+    # Надо ли?
+    if contract and contract.get("id_net") and not contract.get("ground_crm_id") and not called_by_net:
+        forward_sync_ground_endpoint(contract["id_net"], **{
+            "called_by_person": called_by_person,
+            "called_by_organization": called_by_organization,
+            "called_by_house": called_by_house,
+            "called_by_contract": True,
+            "called_by_net": called_by_net,
+        })
+        contract = query_contract.query_contract_by_id(id)
 
     # Собираем payload договора для отправки в битрикс
     contract_payload = contract_utils.build_payload_contract(contract)
 
-    if contract["object_ks_crm_id"]:
-        contract_payload["parentId1066"] = contract["object_ks_crm_id"]
+    if contract.get("object_ks_crm_id"):
+        contract_payload[f"parentId{settings.settings.OBJECT_KS_TYPE_ID}"] = contract["object_ks_crm_id"]
 
     # return {
     #     "contract_db": contract,
     #     "contract_payload_bitrix": contract_payload
     # }
 
-    #Вытаскиваем crm_id
-    contract_crm_id = contract["contract_crm_id"]
+    contract_crm_id = contract.get("contract_crm_id")
 
     # Проверяем, если contract_crm_id не null в обеих таблицах, то обновляем, иначе создаем новую
-    if contract["contract_crm_id"]:
+    if contract_crm_id:
         res = forward_sync_bitrix.update_item(contract_crm_id, settings.settings.CONTRACT_TYPE_ID, contract_payload)
     else:
         contract_crm_id = forward_sync_bitrix.add_item(settings.settings.CONTRACT_TYPE_ID, contract_payload)["id"]
 
     # Обновляем таблицу
-    query_contract.update_contract_with_crm_id(contract_id, contract_crm_id)
-
-    # Ещё раз вызываем синхронизацию, чтобы записать id договора в объект кс
-    forward_sync_house_endpoint(contract["id_house"], contract_crm_id)
+    query_contract.update_contract_with_crm_id(id, contract_crm_id)
    
     return {
-        "contract_id": contract_id,
+        "contract_id": id,
         "contract_crm_id": contract_crm_id
     }
 
-@router.post("/ground/{ground_id}")
-def forward_sync_ground_endpoint(ground_id: int):
+@router.post("/ground/{id}")
+def forward_sync_ground_endpoint(id: int, called_by_person: Optional[bool] = False, called_by_organization: Optional[bool] = False, called_by_house: Optional[bool] = False, called_by_contract: Optional[bool] = False, called_by_net: Optional[bool] = False):
 
     # Достаём площадку из БД по id
-    ground: dict = query_net.query_net_by_id(ground_id)
-    ground_id = ground["id"]
+    ground: dict = query_net.query_net_by_id(id)
+    house: dict | None = None
+    contract: dict | None = None
 
     if not ground:
         raise HTTPException(status_code=400, detail="Contract not found")
 
+    if ground.get("house_id"):
+        house = query_house.query_house_by_id(ground["house_id"])
+    
+    if ground.get("contract_id"):
+        contract = query_contract.query_contract_by_id(ground["contract_id"])
+
+    if house and house.get("id") and not house.get("object_ks_crm_id") and not called_by_house:
+        forward_sync_house_endpoint(house["id"], **{
+            "called_by_person": called_by_person,
+            "called_by_organization": called_by_organization,
+            "called_by_house": called_by_house,
+            "called_by_contract": called_by_contract,
+            "called_by_net": True,
+        })
+        house = query_house.query_house_by_id(ground["house_id"])
+    
+    if contract and contract.get("id") and not contract.get("contract_crm_id") and not called_by_contract:
+        forward_sync_contract_endpoint(contract["id"], **{
+            "called_by_person": called_by_person,
+            "called_by_organization": called_by_organization,
+            "called_by_house": called_by_house,
+            "called_by_contract": called_by_contract,
+            "called_by_net": True,
+        })
+        contract = query_contract.query_contract_by_id(ground["contract_id"])
+
 
     ground_payload = ground_utils.build_payload_ground(ground)
+
+    if ground.get("object_ks_crm_id"):
+        ground_payload[f"parentId{settings.settings.OBJECT_KS_TYPE_ID}"] = ground["object_ks_crm_id"]
+
+    if ground.get("contract_crm_id"):
+        ground_payload[f"parentId{settings.settings.CONTRACT_TYPE_ID}"] = ground["contract_crm_id"]
+
+    # Для дебага
+    # return {
+    #     "ground_payload": ground_payload
+    # }
 
     #Вытаскиваем crm_id
     ground_crm_id = ground["ground_crm_id"]
@@ -348,10 +518,10 @@ def forward_sync_ground_endpoint(ground_id: int):
         ground_crm_id = forward_sync_bitrix.add_item(settings.settings.GROUND_TYPE_ID, ground_payload)["id"]
 
     # Обновляем таблицу
-    query_net.update_net_with_crm_id(ground_id, ground_crm_id)
+    query_net.update_net_with_crm_id(id, ground_crm_id)
    
     return {
-        "ground_id": ground_id,
+        "ground_id": id,
         "ground_crm_id": ground_crm_id
     }
     

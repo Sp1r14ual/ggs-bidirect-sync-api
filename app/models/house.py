@@ -68,4 +68,5 @@ class House(Base):
     id_type_packing = Column(Integer, ForeignKey('type_packing.id'))
     id_type_pipe_material = Column(Integer, ForeignKey('type_pipe_material.id'))
     id_type_spdg_action = Column(Integer, ForeignKey('type_spdg_action.id'))
+    id_net = Column(Integer, ForeignKey('net.id'))
 

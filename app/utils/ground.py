@@ -27,6 +27,13 @@ def build_payload_ground(ground: dict):
 
             continue
 
+        if key in ('contact_crm_id', 'company_crm_id'):
+            if key == "contact_crm_id" and value:
+                contract_payload["contactId"] = value
+            elif key == "company_crm_id" and value:
+                contract_payload["companyId"] = value
+            continue
+
         if key == "name":
             ground_payload["TITLE"] = value
         

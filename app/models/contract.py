@@ -17,6 +17,7 @@ class Contract(Base):
     id_person1 = Column(Integer, ForeignKey('person.id'))
     id_person2 = Column(Integer, ForeignKey('person.id'))
     id_house = Column(Integer, ForeignKey('house.id'))
+    id_net = Column(Integer, ForeignKey('net.id'))
     date = Column(DateTime)
     start = Column(DateTime)
     finish = Column(DateTime)

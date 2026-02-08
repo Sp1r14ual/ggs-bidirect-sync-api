@@ -12,6 +12,8 @@ from app.models.grs import Grs
 from app.models.type_packing import TypePacking
 from app.models.type_pipe_material import TypePipeMaterial
 from app.models.type_spdg_action import TypeSPDGAction
+from app.models.net import Net
+from app.models.contract import Contract
 
 from app.db.engine import engine
 
@@ -88,7 +90,11 @@ def query_house_by_id(id: int):
                 TypePipeMaterial.name.label('type_pipe_material'),
                 House.grs_diam,
                 House.object_ks_crm_id,
-                House.gasification_stage_crm_id
+                House.gasification_stage_crm_id,
+                House.id_net,
+                Net.ground_crm_id,
+                Contract.id.label("contract_id"),
+                Contract.contract_crm_id
             )
             .select_from(House)
             .join(District, House.id_district == District.id, isouter=True)
@@ -100,6 +106,8 @@ def query_house_by_id(id: int):
             .join(TypePacking, House.id_type_packing == TypePacking.id, isouter=True)
             .join(TypePipeMaterial, House.id_type_pipe_material == TypePipeMaterial.id, isouter=True)
             .join(TypeSPDGAction, House.id_type_spdg_action == TypeSPDGAction.id, isouter=True)
+            .join(Net, House.id_net == Net.id, isouter=True)
+            .join(Contract, Contract.id_house == House.id, isouter=True)
             .where(House.id == id)
         )
 

@@ -18,12 +18,10 @@ def get_company(id_obj: int):
     b = Bitrix(settings.BITRIX_WEBHOOK)
     return b.call('crm.company.get', {'id': id_obj})
 
-# Тестовый эндпоинт для получения констант enumoв из битрикса
 @router.get("/get_entity/{id_entity}/{id_obj}")
 def get_entity(id_entity: int, id_obj: int):
     b = Bitrix(settings.BITRIX_WEBHOOK)
     return b.call('crm.item.get', {"id": id_obj, "entityTypeId": id_entity})
-    #return b.call('crm.contact.get', {'id': id_obj})
 
 
 @router.get("/get_entity_type/{id_entity}")
@@ -126,7 +124,7 @@ def unify_field_name(s: str) -> str:
     
     return result
 
-@router.get("/sync_crm_fields_with_db")
+@router.post("/build_table_crm_fields")
 def sync_crm_fields_with_db():
     rows: list = []
 
