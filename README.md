@@ -1,4 +1,4 @@
-# GGS Integration API
+# GGS Bidirect Sync API
 
 API для двухсторонней интеграции с Битрикс24 и базой данных (ОСА)
 
@@ -9,8 +9,8 @@ API для двухсторонней интеграции с Битрикс24 �
 ### 1. Клонирование репозитория
 
 ```bash
-git clone https://github.com/Sp1r14ual/ggs-integration-api.git
-cd ggs-integration-api
+git clone https://github.com/Sp1r14ual/ggs-bidirect-sync-api.git
+cd ggs-bidirect-sync-api
 ```
 
 ### 2. Настройка окружения и зависимостей
@@ -32,11 +32,6 @@ pip install -r requirements.txt
 Скопируйте пример файла конфигурации и заполните его:
 ```
 cp .env.example .env
-```
-Содержимое .env:
-```env
-BITRIX_WEBHOOK="https://dev.ggs-nsk.ru/rest/132/%SECRET%/"
-DB_ENGINE_STRING='mssql+pyodbc://%COMPUTER_NAME%\\SQLEXPRESS/ggs_stud?driver=SQL+Server+Native+Client+11.0'
 ```
 
 ### 4. Запуск сервера
