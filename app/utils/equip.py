@@ -45,7 +45,7 @@ def build_payload_equip(equip, house_equip):
             equip_payload[field["field_name_unified"]] = field["iblock_element_id"]
             continue
 
-        if key in ('pg', 'boil_setup_name'):
+        if key in ('pg', 'boil_setup_name', 'type_boil_classification_name'):
             field_ru_label = field_mapper.HouseEquipToEquip[key].value
             field = crm_fields_db.query_crm_field_by_enum_element_value(str(value), settings.settings.EQUIP_ENTITY_ID)
             if not field:

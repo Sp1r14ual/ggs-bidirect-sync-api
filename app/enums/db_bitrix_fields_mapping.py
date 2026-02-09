@@ -111,6 +111,7 @@ class HouseEquipToEquip(Enum):
     equip_name = "Марка"
     type_cat_name = "Тип оборудования"
     boil_setup_name = "Тип установки"
+    type_boil_classification_name = "Тип камеры сгорания"
     year_produce = "Месяц, год выпуска"
     power = "Мощность, кВт"
     amount = "Кол-во, шт"

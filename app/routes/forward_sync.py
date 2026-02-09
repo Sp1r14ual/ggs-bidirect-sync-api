@@ -343,7 +343,7 @@ def forward_sync_organization_endpoint(id: int, called_by_person: Optional[bool]
     }
 
 @router.post("/equip/{equip_id}/house_equip/{house_equip_id}")
-def forward_sync_equip_endpoint(equip_id: int, house_equip_id: int, **parents):
+def forward_sync_equip_endpoint(equip_id: int, house_equip_id: int, parents: dict = None):
     # Достаём оборудование из БД по id
     equip: dict = query_equip.query_equip_by_id(equip_id)
     house_equip: dict = query_house_equip.query_house_equip_by_id(house_equip_id)
