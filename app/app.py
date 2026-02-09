@@ -13,5 +13,5 @@ app.include_router(admin_tasks_router)
 @app.get("/")
 def root():
     content = '''<h1>Здравствуй, мир</h1>
-    <p>Документация <a href="/docs">туть</a></p>'''
+    <p>Документация <a href="/docs">тут</a></p>'''
     return HTMLResponse(content=content, status_code=200)

@@ -91,3 +91,5 @@ insert into type_boil_classification(name) values('проточный');
 insert into type_boil_classification(name) values('автоматический');
 insert into type_boil_classification(name) values('полуавтоматический');
 insert into type_boil_classification(name) values('емкостной');
+
+ALTER TABLE house_equip ADD id_type_boil_classification INTEGER REFERENCES type_boil_classification(id);

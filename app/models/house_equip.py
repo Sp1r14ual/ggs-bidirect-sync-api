@@ -19,5 +19,6 @@ class HouseEquip(Base):
     du = Column(Integer, nullable=True)
     pg = Column(Integer, nullable=True)
     equip_crm_id = Column(Integer, nullable=True)
+    id_type_boil_classification = Column(Integer, ForeignKey('type_boil_classification.id'))
 
 
