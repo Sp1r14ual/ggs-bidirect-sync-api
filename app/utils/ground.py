@@ -34,11 +34,14 @@ def build_payload_ground(ground: dict):
                 contract_payload["companyId"] = value
             continue
 
-        if key == "name":
-            ground_payload["TITLE"] = value
+        # if key == "name":
+        #     ground_payload["TITLE"] = value
         
         field_ru_label = field_mapper.NetToGround[key].value
         field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.GROUND_ENTITY_ID)
         ground_payload[field["field_name_unified"]] = value  
-    
+
+    # Добавляем отдельно заголовки
+    ground_payload["title"] = ground.get("name")
+
     return ground_payload
