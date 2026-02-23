@@ -342,17 +342,16 @@ def forward_sync_organization_endpoint(id: int, called_by_person: Optional[bool]
         "has_address_fact_company": has_address_fact_company
     }
 
-@router.post("/equip/{equip_id}/house_equip/{house_equip_id}")
-def forward_sync_equip_endpoint(equip_id: int, house_equip_id: int, parents: dict = None):
+@router.post("/house_equip/{house_equip_id}")
+def forward_sync_equip_endpoint(house_equip_id: int, parents: dict = None):
     # Достаём оборудование из БД по id
-    equip: dict = query_equip.query_equip_by_id(equip_id)
     house_equip: dict = query_house_equip.query_house_equip_by_id(house_equip_id)
 
-    if not(equip and house_equip):
+    if not(house_equip):
         raise HTTPException(status_code=400, detail="Equip not found") 
 
     # Собираем payload оборудования для отправки в битрикс
-    equip_payload = equip_utils.build_payload_equip(equip, house_equip)
+    equip_payload = equip_utils.build_payload_equip(house_equip)
 
     # return {
     #     "equip": equip,
@@ -361,22 +360,20 @@ def forward_sync_equip_endpoint(equip_id: int, house_equip_id: int, parents: dic
     # }
 
     #Вытаскиваем crm_id
-    equip_crm_id = equip["equip_crm_id"]
+    equip_crm_id = house_equip["equip_crm_id"]
 
     # Проверяем, если equip_crm_id не null в обеих таблицах, то обновляем, иначе создаем новую
-    if equip["equip_crm_id"] and house_equip["equip_crm_id"]:
+    if house_equip["equip_crm_id"]:
         res = forward_sync_bitrix.update_item(equip_crm_id, settings.settings.EQUIP_TYPE_ID, equip_payload)
     else:
         equip_crm_id = forward_sync_bitrix.add_item(settings.settings.EQUIP_TYPE_ID, equip_payload)["id"]
 
-    # Обновляем обе таблицы
-    query_equip.update_equip_with_crm_ids(equip_id, equip_crm_id)
+    # Обновляем таблицу
     query_house_equip.update_house_equip_with_crm_ids(house_equip_id, equip_crm_id)
    
     return {
-        "equip_id": equip_id,
         "house_equip_id": house_equip_id,
-        "equip_crm_id": equip_crm_id
+        "equip_crm_id": equip_crm_id,
     }
 
 @router.post("/contract/{id}")

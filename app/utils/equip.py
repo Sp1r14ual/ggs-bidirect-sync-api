@@ -2,36 +2,10 @@
 import app.enums.db_bitrix_fields_mapping as field_mapper
 import app.db.query_crm_fields as crm_fields_db
 import app.settings as settings
+import logging
 
-def build_payload_equip(equip, house_equip):
+def build_payload_equip(house_equip):
     equip_payload = dict()
-
-    for key, value in equip.items():
-        print(f"STATE: {key}:{value}")
-        if key not in field_mapper.EquipToEquip.__members__:
-            continue
-
-        if key in ('packing_name', 'pipe_material_name'):
-            # field_ru_label = field_mapper.EquipToEquip[key].value
-            field = crm_fields_db.query_crm_field_by_enum_element_value(str(value), settings.settings.EQUIP_ENTITY_ID)
-            if not field:
-                continue
-            equip_payload[field["field_name_unified"]] = field["enum_element_id"]
-            continue
-
-        if key == "diameter_type_name":
-            value_trimmed = value[3:] if value else None
-            field = crm_fields_db.query_crm_field_by_iblock_element_value(value_trimmed, settings.settings.EQUIP_ENTITY_ID)
-            if not field:
-                continue
-            equip_payload[field["field_name_unified"]] = field["iblock_element_id"]
-            continue
-        
-        else:
-            field_ru_label = field_mapper.EquipToEquip[key].value
-            field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.EQUIP_ENTITY_ID)
-            equip_payload[field["field_name_unified"]] = value
-
 
     for key, value in house_equip.items():
         print(f"STATE: {key}:{value}")
