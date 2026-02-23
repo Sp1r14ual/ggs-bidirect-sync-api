@@ -71,5 +71,8 @@ def build_payload_contract(contract):
         field_ru_label = field_mapper.ContractToContract[key].value
         field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.CONTRACT_ENTITY_ID)
         contract_payload[field["field_name_unified"]] = value
+
+    # Добавляем отдельно заголовки
+    contract_payload["title"] = f"Договор, contract_id: {contract["id"]}"
     
     return contract_payload

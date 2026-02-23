@@ -81,5 +81,9 @@ def build_payloads_object_ks_gs(house):
         field_ru_label = field_mapper.HouseToGasificationStageFields[key].value
         field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.GASIFICATION_STAGE_ENTITY_ID)
         gasification_stage_payload[field["field_name_unified"]] = value
+
+    # Добавляем отдельно заголовки
+    object_ks_payload["title"] = f"Объект КС, house_id: {house["id"]}" # Не дает записать в заголовок ничего кроме адреса
+    gasification_stage_payload["title"] = f"Этап газификации, house_id: {house["id"]}"
     
     return object_ks_payload, gasification_stage_payload
