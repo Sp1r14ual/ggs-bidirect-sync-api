@@ -4,6 +4,7 @@ import app.db.query_crm_fields as crm_fields_db
 import app.settings as settings
 import logging
 
+
 def build_payload_equip(house_equip):
     equip_payload = dict()
 
@@ -54,7 +55,9 @@ def build_payload_equip(house_equip):
 
         field_ru_label = field_mapper.HouseEquipToEquip[key].value
         field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.EQUIP_ENTITY_ID)
-        equip_payload[field["field_name_unified"]] = value  
+        equip_payload[field["field_name_unified"]] = value
 
+    # Добавляем отдельно заголовки
+    equip_payload["title"] = f'Оборудование, house_equip_id: {house_equip["id"]}'
     
     return equip_payload
