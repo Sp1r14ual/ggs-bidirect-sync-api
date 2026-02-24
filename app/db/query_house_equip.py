@@ -6,6 +6,7 @@ from app.models.type_house_equip import TypeHouseEquip
 from app.models.type_cat_house_equip import TypeCatHouseEquip
 from app.models.type_boil_setup import TypeBoilSetup
 from app.models.type_boil_classification import TypeBoilClassification
+from app.models.house import House
 
 def query_house_equip_by_id(id: int):
 
@@ -23,12 +24,14 @@ def query_house_equip_by_id(id: int):
                 HouseEquip.du,
                 HouseEquip.meters,
                 HouseEquip.pg,
-                HouseEquip.equip_crm_id
+                HouseEquip.equip_crm_id,
+                House.object_ks_crm_id
             )
             .outerjoin(TypeHouseEquip, HouseEquip.id_type_house_equip == TypeHouseEquip.id)
             .outerjoin(TypeCatHouseEquip, HouseEquip.id_type_cat_house_equip == TypeCatHouseEquip.id)
             .outerjoin(TypeBoilSetup, HouseEquip.id_type_boil_setup == TypeBoilSetup.id)
             .outerjoin(TypeBoilClassification, HouseEquip.id_type_boil_classification == TypeBoilClassification.id)
+            .outerjoin(House, HouseEquip.id_house == House.id)
             .where(HouseEquip.id == id)
         )
 

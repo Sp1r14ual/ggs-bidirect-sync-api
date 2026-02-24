@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     GROUND_ENTITY_ID: str
     GROUND_TYPE_ID: int
 
+    WORK_ENTITY_ID: str
+    WORK_TYPE_ID: int
+
     model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings()

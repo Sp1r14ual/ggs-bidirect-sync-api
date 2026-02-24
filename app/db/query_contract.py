@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, select, update
+from sqlalchemy import create_engine, select, update, literal
 from sqlalchemy.orm import Session, aliased
 from app.db.engine import engine
 from app.models.contract_category import ContractCategory
@@ -28,6 +28,8 @@ def query_contract_by_id(id: int):
             Contract.number,
             TypeContract.name.label('type_contract_name'),
             TypeContract.prefix.label('type_contract_prefix'),
+            TypeContract.prefix.label('type_contract_prefix1'),
+            literal('Типовой').label('is_type_contract'),
             TypeContract.crm_category,
             Organization1.company_crm_id.label('id_organization1'),
             Organization2.company_crm_id.label('id_organization2'),
@@ -54,12 +56,13 @@ def query_contract_by_id(id: int):
             Contract.cancel_remark,
             Contract.cancel_date,
             Contract.project_date,
-            Contract.contract_crm_id
+            Contract.contract_crm_id,
+            TypeProduct.name.label('type_product_name'),
         ).select_from(Contract
         ).outerjoin(
             TypeContract, Contract.id_type_contract == TypeContract.id
         ).outerjoin(
-            TypeProduct, Contract.id_type_product == TypeProduct.id
+            TypeProduct, TypeContract.id_type_product == TypeProduct.id
         ).outerjoin(
             Organization1, Contract.id_organization1 == Organization1.id
         ).outerjoin(

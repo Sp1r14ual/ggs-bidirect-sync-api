@@ -1,16 +1,26 @@
 import app.enums.db_bitrix_fields_mapping as field_mapper
 import app.db.query_crm_fields as crm_fields_db
 import app.settings as settings
+from datetime import date
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def build_payload_contract(contract):
     contract_payload = dict()
-
+    logger.error('We are here! ')
     for key, value in contract.items():
+        logger.error(f'*** {key}:{value} ***')
         if key not in field_mapper.ContractToContract.__members__ and key not in ('type_contract_prefix', 'date', 'contact_crm_id', 'company_crm_id', 'type_contract_person_category_name'):
             continue
 
-        if key in ("type_contract_status_name", 'type_contract_name', 'type_contract_prefix', 'type_contract_status_name', 'crm_category', 'type_contract_person_category_name'):
-            field = crm_fields_db.query_crm_field_by_enum_element_value(str(value), settings.settings.CONTRACT_ENTITY_ID)
+        if key in ("type_contract_status_name", 'type_contract_name', 'type_contract_prefix1', 'type_contract_status_name',
+                   'crm_category', 'type_contract_person_category_name', 'type_product_name', 'is_type_contract'):
+            logger.error(key)
+            field = crm_fields_db.query_crm_field_by_enum_element_value(str(value),
+                                                                        settings.settings.CONTRACT_ENTITY_ID,
+                                                                        key if key in ('type_contract_prefix1', 'type_product_name') else None )
             if not field:
                 continue
             contract_payload[field["field_name_unified"]] = field["enum_element_id"]
@@ -66,13 +76,18 @@ def build_payload_contract(contract):
             field_ru_label = field_mapper.ContractToContract[key + "2"].value
             field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.CONTRACT_ENTITY_ID)
             contract_payload[field["field_name_unified"]] = value
+
+            field_ru_label = field_mapper.ContractToContract[key + "3"].value
+            field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.CONTRACT_ENTITY_ID)
+            contract_payload[field["field_name_unified"]] = value
             continue
 
         field_ru_label = field_mapper.ContractToContract[key].value
         field = crm_fields_db.query_crm_field_by_ru_label(field_ru_label, settings.settings.CONTRACT_ENTITY_ID)
+        logger.error(f'!!{key}:{value}:{field_ru_label} !!')
         contract_payload[field["field_name_unified"]] = value
 
     # Добавляем отдельно заголовки
-    contract_payload["title"] = f"Договор, contract_id: {contract["id"]}"
+    contract_payload["title"] = f"{contract['number']} от {date.strftime(contract['date'],'%d.%m.%Y')}"
     
     return contract_payload

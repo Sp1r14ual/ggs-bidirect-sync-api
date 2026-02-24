@@ -63,6 +63,8 @@ class House(Base):
     id_town = Column(Integer, ForeignKey('town.id'))
     id_type_client = Column(Integer, ForeignKey('type_client.id'))
     id_type_house_gazification = Column(Integer, ForeignKey('type_house_gazification.id'))
+    id_type_house_status = Column(Integer, ForeignKey('type_house_status.id'))
+    id_type_house_consumer = Column(Integer, ForeignKey('type_house_consumer.id'))
     id_organization = Column(Integer, ForeignKey('organization.id')) #Есть ли person_id ?
     id_grs = Column(Integer, ForeignKey('grs.id'))
     id_type_packing = Column(Integer, ForeignKey('type_packing.id'))

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, select, join, update
+from sqlalchemy import create_engine, select, join, update, and_
 from sqlalchemy.orm import Session
 
 from app.models.house import House
@@ -14,6 +14,9 @@ from app.models.type_pipe_material import TypePipeMaterial
 from app.models.type_spdg_action import TypeSPDGAction
 from app.models.net import Net
 from app.models.contract import Contract
+from app.models.type_house_status import TypeHouseStatus
+from app.models.type_house_consumer import TypeHouseConsumer
+from app.models.ggs_doc import GgsDoc
 
 from app.db.engine import engine
 
@@ -60,6 +63,8 @@ def query_house_by_id(id: int):
                 #
                 TypeClient.name.label('type_client'),
                 TypeHouseGazification.name.label('type_house_gazification'),
+                TypeHouseStatus.name.label('type_house_status'),
+                TypeHouseConsumer.name.label('type_house_consumer'),
                 District.name.label('district'),
                 House.is_ods,
                 House.cadastr_number,
@@ -94,13 +99,17 @@ def query_house_by_id(id: int):
                 House.id_net,
                 Net.ground_crm_id,
                 Contract.id.label("contract_id"),
-                Contract.contract_crm_id
+                Contract.contract_crm_id,
+                GgsDoc.doc_num.label('tu_doc_num'),
+                GgsDoc.doc_date.label('tu_doc_date')
             )
             .select_from(House)
             .join(District, House.id_district == District.id, isouter=True)
             .join(Street, House.id_street == Street.id, isouter=True)
             .join(Town, House.id_town == Town.id, isouter=True)
             .join(TypeClient, House.id_type_client == TypeClient.id, isouter=True)
+            .join(TypeHouseStatus, House.id_type_house_status == TypeHouseStatus.id, isouter=True)
+            .join(TypeHouseConsumer, House.id_type_house_consumer == TypeHouseConsumer.id, isouter=True)
             .join(TypeHouseGazification, House.id_type_house_gazification == TypeHouseGazification.id, isouter=True)
             .join(Grs, House.id_grs == Grs.id, isouter=True)
             .join(TypePacking, House.id_type_packing == TypePacking.id, isouter=True)
@@ -108,6 +117,7 @@ def query_house_by_id(id: int):
             .join(TypeSPDGAction, House.id_type_spdg_action == TypeSPDGAction.id, isouter=True)
             .join(Net, House.id_net == Net.id, isouter=True)
             .join(Contract, Contract.id_house == House.id, isouter=True)
+            .join(GgsDoc, and_(GgsDoc.id_house == House.id, GgsDoc.is_actual == 1, GgsDoc.id_type_ggs_doc == 1), isouter=True)
             .where(House.id == id)
         )
 

@@ -4,6 +4,7 @@ import app.db.query_crm_fields as crm_fields_db
 import app.settings as settings
 import logging
 
+logger = logging.getLogger(__name__)
 
 def build_payload_equip(house_equip):
     equip_payload = dict()
@@ -29,13 +30,14 @@ def build_payload_equip(house_equip):
             continue
 
         # Проблема на стороне битрикс
-        # if key == "type_cat_name":
-        #     bitrix_field_name = field_mapper.HouseEquipToEquip[key].value
-        #     field = crm_fields_db.query_crm_field_by_enum_element_value(str(value), settings.settings.EQUIP_ENTITY_ID)
-        #     if not field:
-        #         continue
-        #     equip_payload[field["field_name_unified"]] = field["enum_element_id"]
-        #     continue
+        if key == "type_cat_name":
+             bitrix_field_name = field_mapper.HouseEquipToEquip[key].value
+             field = crm_fields_db.query_crm_field_by_enum_element_value(str(value), settings.settings.EQUIP_ENTITY_ID)
+             if not field:
+                 continue
+             logger.error(f'!!!{field}!!!')
+             #equip_payload[field["field_name_unified"]] = field["enum_element_id"]
+             continue
 
 
         if key == "du":
@@ -58,6 +60,7 @@ def build_payload_equip(house_equip):
         equip_payload[field["field_name_unified"]] = value
 
     # Добавляем отдельно заголовки
-    equip_payload["title"] = f'Оборудование, house_equip_id: {house_equip["id"]}'
-    
+    equip_payload["title"] = f'{house_equip["type_cat_name"]}, house_equip_id: {house_equip["id"]}'
+    logger.error(equip_payload)
+
     return equip_payload

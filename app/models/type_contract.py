@@ -15,3 +15,4 @@ class TypeContract(Base):
     id_organization = Column(Integer, ForeignKey("organization.id"))
     id_type_contract_person_category = Column(Integer, ForeignKey("type_contract_person_category.id"))
     crm_category = Column(String(32))
+    id_type_product = Column(Integer, ForeignKey('type_product.id'))

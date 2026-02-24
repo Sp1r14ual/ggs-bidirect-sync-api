@@ -7,7 +7,9 @@ class HouseToObjectKSFields(Enum):
     address = "Адрес"
     #
     type_client = "Тип клиента"
+    type_house_status = "Состояние"
     type_house_gazification = "Тип газификации"
+    type_house_consumer = "Тип объекта"
     district = "Район"
     is_ods = "ОДС"
     cadastr_number = "Кадастровый номер земельного участка"
@@ -31,6 +33,8 @@ class HouseToGasificationStageFields(Enum):
     start_gaz_remark = "Примечание"
     ptu_request_date = "Заявление от (ПТУ)"
     ptu_send_date = "Передано в ПТО (ПТУ)"
+    tu_doc_num = "Номер (ТУ)"
+    tu_doc_date = "Дата (ТУ)"
     grs = "ГРС"
     spdg_number_protocol = "Номер протокола"
     spdg_date_protocol = "дата"
@@ -125,14 +129,15 @@ class ContractToContract(Enum):
     date1 = "Дата заключения договора"
     finish = "Действует до"
     start = "Действует с"
-    summ = "Сумма"
-    number = "№"
+    summ = "Стоимость"
+    number = "Номер договора"
     date2 = "Дата"
     remark = "Примечание"
     type_contract_status_name = "Текущее состояние"
     type_product_name = "Зарегистрировать"
-    type_contract_prefix = "Префикс"
-    act_signed = "Дата подписания договора"
+    type_contract_prefix = "Префикс",
+    type_contract_prefix1 = "Префикс_",
+    date3 = "Дата подписания договора"
     id_person1 = "Исполнитель/Продавец"
     id_organization1 = "Исполнитель/Продавец"
     id_person2 = "Заказчик/Покупатель"
@@ -140,6 +145,15 @@ class ContractToContract(Enum):
     subject = "Предмет договора"
     contract_category_name = "Вид договора"
     crm_category = "Категория"
+    is_type_contract = "Какой договор?"
+
+
+class WorkToWork(Enum):
+    contract_number = "Договор"
+    date_appoint = "Назначено"
+    date_complete = "Проведено"
+    remark = "Примечание"
+
 
 class NetToGround(Enum):
     sys_old = "Код"

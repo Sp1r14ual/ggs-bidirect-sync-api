@@ -11,17 +11,19 @@ import app.utils.company as company_utils
 import app.utils.equip as equip_utils
 import app.utils.contract as contract_utils
 import app.utils.ground as ground_utils
+import app.utils.work_operation as work_utils
 import app.settings as settings
 import app.db.query_house as query_house
 import app.db.query_house_owner as query_house_owner
 import app.db.query_person as query_person
 import app.db.query_organization as query_organization
-import app.db.query_equip as query_equip
+import app.db.query_work as query_work
 import app.db.query_house_equip as query_house_equip
 import app.db.query_contract as query_contract
 import app.db.query_net as query_net
 
 router = APIRouter(prefix="/forward_sync", tags=["forward_sync"])
+
 
 @router.post("/house/{id}")
 def forward_sync_house_endpoint(id: int, called_by_house: Optional[bool] = False, called_by_person: Optional[bool] = False, called_by_organization: Optional[bool] = False, called_by_net: Optional[bool] = False, called_by_contract: Optional[bool] = False) -> dict:
@@ -352,7 +354,7 @@ def forward_sync_equip_endpoint(house_equip_id: int, parents: dict = None):
 
     # Собираем payload оборудования для отправки в битрикс
     equip_payload = equip_utils.build_payload_equip(house_equip)
-
+    equip_payload[f"PARENT_ID_{settings.settings.OBJECT_KS_TYPE_ID}"] = house_equip["object_ks_crm_id"]
     # return {
     #     "equip": equip,
     #     "house_equip": house_equip,
@@ -375,6 +377,7 @@ def forward_sync_equip_endpoint(house_equip_id: int, parents: dict = None):
         "house_equip_id": house_equip_id,
         "equip_crm_id": equip_crm_id,
     }
+
 
 @router.post("/contract/{id}")
 def forward_sync_contract_endpoint(id: int, called_by_house: Optional[bool] = False, called_by_person: Optional[bool] = False, called_by_organization: Optional[bool] = False, called_by_contract: Optional[bool] = False, called_by_net: Optional[bool] = False):
@@ -453,6 +456,41 @@ def forward_sync_contract_endpoint(id: int, called_by_house: Optional[bool] = Fa
         "contract_id": id,
         "contract_crm_id": contract_crm_id
     }
+
+
+@router.post("/work_operation/{id}")
+def forward_sync_work_endpoint(id: int, called_by_house: Optional[bool] = False,
+                                   called_by_person: Optional[bool] = False,
+                                   called_by_organization: Optional[bool] = False,
+                                   called_by_contract: Optional[bool] = False, called_by_net: Optional[bool] = False):
+    # Достаём ТО из БД по id
+    work_operation: dict = query_work.query_work_by_id(id)
+
+    if not work_operation:
+        raise HTTPException(status_code=400, detail="Work (TO) not found")
+
+    # Собираем payload договора для отправки в битрикс
+    work_payload = work_utils.build_payload_work(work_operation)
+
+    if work_operation.get("object_ks_crm_id"):
+        work_payload[f"parentId{settings.settings.OBJECT_KS_TYPE_ID}"] = work_operation["object_ks_crm_id"]
+
+    work_crm_id = work_operation.get("work_crm_id")
+
+    # Проверяем, если contract_crm_id не null в обеих таблицах, то обновляем, иначе создаем новую
+    if work_crm_id:
+        res = forward_sync_bitrix.update_item(work_crm_id, settings.settings.WORK_TYPE_ID, work_payload)
+    else:
+        work_crm_id = forward_sync_bitrix.add_item(settings.settings.WORK_TYPE_ID, work_payload)["id"]
+
+    # Обновляем таблицу
+    query_work.update_work_with_crm_id(id, work_crm_id)
+
+    return {
+        "work_operation_id": id,
+        "work_crm_id": work_crm_id
+    }
+
 
 @router.post("/ground/{id}")
 def forward_sync_ground_endpoint(id: int, called_by_person: Optional[bool] = False, called_by_organization: Optional[bool] = False, called_by_house: Optional[bool] = False, called_by_contract: Optional[bool] = False, called_by_net: Optional[bool] = False):

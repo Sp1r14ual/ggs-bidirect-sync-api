@@ -1,7 +1,9 @@
 import app.enums.db_bitrix_fields_mapping as field_mapper
 import app.db.query_crm_fields as crm_fields_db
 import app.settings as settings
+import logging
 
+logger = logging.getLogger(__name__)
 def get_bool_value(value):
     return "Y" if bool(value) else "N"
 
@@ -23,6 +25,7 @@ def build_payloads_object_ks_gs(house):
     object_ks_payload["address"] = None
 
     for key, value in house.items():
+        logger.error(f'*** {key}:{value} ***')
         if key in ("postal_index", "town", "street", "house_number", "corpus_number", "flat_number",
         "object_ks_crm_id", "gasification_stage_crm_id", "id_net", "contract_id", "contract_crm_id"):
             continue
@@ -46,9 +49,10 @@ def build_payloads_object_ks_gs(house):
             object_ks_payload[field["field_name_unified"]] = value
             continue
 
-        if key in ('type_client', 'type_house_gazification'):
+        if key in ('type_client', 'type_house_gazification', 'type_house_status', 'type_house_consumer'):
             # field_ru_label = field_mapper.HouseToObjectKSFields[key].value
             field = crm_fields_db.query_crm_field_by_enum_element_value(value, settings.settings.OBJECT_KS_ENTITY_ID)
+            logger.error(f'*** {field} ***')
             if not field:
                 continue
             object_ks_payload[field["field_name_unified"]] = field["enum_element_id"]
@@ -83,7 +87,7 @@ def build_payloads_object_ks_gs(house):
         gasification_stage_payload[field["field_name_unified"]] = value
 
     # Добавляем отдельно заголовки
-    object_ks_payload["title"] = f"Объект КС, house_id: {house["id"]}" # Не дает записать в заголовок ничего кроме адреса
-    gasification_stage_payload["title"] = f"Этап газификации, house_id: {house["id"]}"
+    object_ks_payload["title"] = f"{house['address'].lstrip(' ').lstrip(',')} osa:{house['id']}"
+    gasification_stage_payload["title"] = f"Этап газификации, house_id: {house['id']}"
     
     return object_ks_payload, gasification_stage_payload
