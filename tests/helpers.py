@@ -1,4 +1,5 @@
 import datetime
+from decimal import Decimal
 from typing import Any
 
 
@@ -9,6 +10,7 @@ def values_match(expected: Any, actual: Any) -> bool:
       - datetime objects vs ISO-8601 strings
       - integers vs strings (Bitrix often returns IDs as strings)
       - multi-value iblock fields returned as lists
+      - Decimal vs float (SQL Server returns Decimal, Bitrix returns float)
     Returns True if expected is None (null fields are skipped, not asserted).
     """
     if expected is None:
@@ -17,6 +19,13 @@ def values_match(expected: Any, actual: Any) -> bool:
         return False
     if isinstance(expected, (datetime.datetime, datetime.date)):
         return expected.strftime("%Y-%m-%d") in str(actual)
+    if isinstance(expected, Decimal):
+        try:
+            if isinstance(actual, list):
+                return float(expected) in [float(v) for v in actual]
+            return float(expected) == float(actual)
+        except (TypeError, ValueError):
+            pass
     if isinstance(actual, list):
         return str(expected) in [str(v) for v in actual]
     return str(expected) == str(actual)
