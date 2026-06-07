@@ -36,7 +36,7 @@ def build_payload_equip(house_equip):
              if not field:
                  continue
              logger.error(f'!!!{field}!!!')
-             #equip_payload[field["field_name_unified"]] = field["enum_element_id"]
+             equip_payload[field["field_name_unified"]] = field["enum_element_id"]
              continue
 
 

@@ -1,7 +1,7 @@
 from fast_bitrix24 import Bitrix
 from app.settings import settings
 
-b = Bitrix(settings.BITRIX_WEBHOOK)
+b = Bitrix(settings.BITRIX_WEBHOOK, ssl=False)
 
 def add_item(entity_type_id: int, payload: dict):
     res = b.call('crm.item.add', {"entityTypeId": entity_type_id, "fields": payload})
