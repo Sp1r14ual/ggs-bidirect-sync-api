@@ -25,7 +25,7 @@ def build_payloads_object_ks_gs(house):
     object_ks_payload["address"] = None
 
     for key, value in house.items():
-        logger.error(f'*** {key}:{value} ***')
+        logger.debug(f'*** {key}:{value} ***')
         if key in ("postal_index", "town", "street", "house_number", "corpus_number", "flat_number",
         "object_ks_crm_id", "gasification_stage_crm_id", "id_net", "contract_id", "contract_crm_id"):
             continue

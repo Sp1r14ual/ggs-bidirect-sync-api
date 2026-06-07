@@ -72,7 +72,7 @@ class TestSyncHouse:
         bitrix_item = bitrix.call(
             "crm.item.get",
             {"id": oks_crm_id, "entityTypeId": settings.OBJECT_KS_TYPE_ID},
-        )["item"]
+        )
 
         assert_payload_matches_bitrix(oks_payload, bitrix_item, "Object KS")
 
@@ -83,7 +83,7 @@ class TestSyncHouse:
         bitrix_item = bitrix.call(
             "crm.item.get",
             {"id": gs_crm_id, "entityTypeId": settings.GASIFICATION_STAGE_TYPE_ID},
-        )["item"]
+        )
 
         assert_payload_matches_bitrix(gs_payload, bitrix_item, "Gasification Stage")
 
