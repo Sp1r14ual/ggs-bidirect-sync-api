@@ -60,6 +60,10 @@ app/
   legacy_modules/     -- Deprecated code, do not use
 ```
 
+> **Note on AI Context:** 
+> For domain understanding (Context Engineering), refer to **[DOMAIN.md](DOMAIN.md)**. It contains the business-level descriptions of all entities and their relationships.
+
+
 ## Sync Data Flow
 
 For each entity, the sync follows this pattern:
